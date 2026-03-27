@@ -4,8 +4,8 @@ Open Scrapers Desk is a PyQt desktop application for people who want to use the 
 
 This repository is intentionally separate from the scraper engine:
 
-- Backend repo: `open-scrapers-toolkit`
-- Desktop repo: `open-scrapers-desk`
+- Backend repo: `https://github.com/Ninezel/open-scrapers-toolkit`
+- Desktop repo: `https://github.com/Ninezel/open-scrapers-desk`
 
 That split keeps the scrapers reusable for developers while giving non-programmers a clean app to work with.
 
