@@ -32,8 +32,6 @@ The status panel reports:
 
 The bottom section lists recent JSON results. Double-clicking one jumps you into the Results Library tab with that file selected.
 
-![Overview tab screenshot](images/desk-overview.png)
-
 ## Run Scrapers tab
 
 This tab is where users browse the scraper catalog and execute jobs.
@@ -75,8 +73,6 @@ The run controls support:
 
 The run log captures standard output and standard error from the toolkit command. This makes debugging much easier than silent failure.
 
-![Run Scrapers tab screenshot](images/desk-run-tab.png)
-
 ## Results Library tab
 
 This tab turns saved JSON files into a readable workspace.
@@ -114,8 +110,6 @@ The record filter searches across:
 
 You can also open a JSON file directly even if it was not already in the scanned library.
 
-![Results Library screenshot](images/desk-results-library.png)
-
 ## Logs & Help tab
 
 This tab includes:
@@ -132,8 +126,6 @@ The activity log records important events such as:
 - run starts
 - run finishes
 - file-load actions
-
-![Logs and Help screenshot](images/desk-logs-help.png)
 
 ## Common user workflows
 
