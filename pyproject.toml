@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "open-scrapers-desk"
+version = "0.1.0"
+description = "PyQt desktop companion for browsing and running Open Scrapers Toolkit."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [
+  { name = "Open Scrapers contributors" }
+]
+dependencies = [
+  "PyQt6>=6.7",
+]
+keywords = ["pyqt", "desktop", "scrapers", "rss", "research", "viewer"]
+
+[project.urls]
+Homepage = "https://github.com/Ninezel/open-scrapers-desk"
+Documentation = "https://github.com/Ninezel/open-scrapers-desk/wiki"
+Source = "https://github.com/Ninezel/open-scrapers-desk"
+Issues = "https://github.com/Ninezel/open-scrapers-desk/issues"
+
+[project.scripts]
+open-scrapers-desk = "open_scrapers_desk.app:main"
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
