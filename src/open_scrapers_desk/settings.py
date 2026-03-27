@@ -14,9 +14,18 @@ COMMON_TOOLKIT_NAMES = [
   "OpenScrapers",
 ]
 
+DEFAULT_KOFI_URL = "https://ko-fi.com/ninezel"
+PLACEHOLDER_KOFI_URLS = {
+  "https://ko-fi.com/example",
+  "https://ko-fi.com/yourname",
+  "https://ko-fi.com/ninezel",
+  "ko-fi.com/example",
+  "ko-fi.com/yourname",
+}
+
 
 def default_kofi_url() -> str:
-  return os.environ.get("OPEN_SCRAPERS_KOFI_URL", "").strip()
+  return os.environ.get("OPEN_SCRAPERS_KOFI_URL", DEFAULT_KOFI_URL).strip()
 
 
 def normalize_url(value: str) -> str:
@@ -26,6 +35,13 @@ def normalize_url(value: str) -> str:
   if url.startswith(("http://", "https://")):
     return url
   return f"https://{url}"
+
+
+def resolve_kofi_url(value: str) -> str:
+  normalized = normalize_url(value)
+  if not normalized or normalized in PLACEHOLDER_KOFI_URLS:
+    return DEFAULT_KOFI_URL
+  return normalized
 
 
 def app_data_dir() -> Path:
@@ -84,7 +100,7 @@ class SettingsStore:
       settings = AppSettings(
         toolkit_path=toolkit_path,
         output_dir=default_output_dir(toolkit_path),
-        kofi_url=default_kofi_url(),
+        kofi_url=resolve_kofi_url(default_kofi_url()),
       )
       self.save(settings)
       return settings
@@ -97,7 +113,7 @@ class SettingsStore:
       toolkit_path=toolkit_path,
       node_executable=raw.get("node_executable", "node"),
       output_dir=output_dir,
-      kofi_url=normalize_url(raw.get("kofi_url", "") or default_kofi_url()),
+      kofi_url=resolve_kofi_url(raw.get("kofi_url", "") or default_kofi_url()),
       last_scraper_id=raw.get("last_scraper_id", ""),
       last_category=raw.get("last_category", "all"),
     )
@@ -107,7 +123,7 @@ class SettingsStore:
       "toolkit_path": settings.toolkit_path,
       "node_executable": settings.node_executable,
       "output_dir": settings.output_dir,
-      "kofi_url": normalize_url(settings.kofi_url),
+      "kofi_url": resolve_kofi_url(settings.kofi_url),
       "last_scraper_id": settings.last_scraper_id,
       "last_category": settings.last_category,
     }

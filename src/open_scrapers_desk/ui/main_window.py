@@ -81,7 +81,7 @@ class MainWindow(QMainWindow):
 
     hero_actions = QHBoxLayout()
     hero_actions.addStretch(1)
-    self.support_button = QPushButton("Support on Ko-fi")
+    self.support_button = QPushButton("Support Ninezel on Ko-fi")
     self.support_button.setObjectName("SupportButton")
     self.support_button.clicked.connect(self.open_kofi_link)
     hero_actions.addWidget(self.support_button)
@@ -133,7 +133,7 @@ class MainWindow(QMainWindow):
 
     kofi_row = QHBoxLayout()
     self.kofi_url_edit = QLineEdit()
-    self.kofi_url_edit.setPlaceholderText("https://ko-fi.com/yourname")
+    self.kofi_url_edit.setPlaceholderText("https://ko-fi.com/ninezel")
     self.kofi_url_edit.setToolTip("Set your Ko-fi page URL so the app can open it.")
     self.open_kofi_button = QPushButton("Open Ko-fi")
     self.open_kofi_button.setObjectName("SupportButton")
@@ -374,14 +374,14 @@ class MainWindow(QMainWindow):
         <li>Run <code>npm install</code> and <code>npm run build</code> in that repo.</li>
         <li>Point this app at the toolkit folder.</li>
       </ol>
-      <p>You can also add your Ko-fi URL on the Overview tab to show a built-in support button in the app.</p>
+      <p>The app includes a built-in Ko-fi support button and defaults it to Ninezel's Ko-fi page.</p>
       <p>Need the docs? Open the project README and wiki after publishing this repo to GitHub.</p>
       """
     )
     help_layout.addWidget(help_browser)
     support_row = QHBoxLayout()
     support_row.addStretch(1)
-    self.help_support_button = QPushButton("Open Ko-fi Support Page")
+    self.help_support_button = QPushButton("Open Ninezel's Ko-fi")
     self.help_support_button.setObjectName("SupportButton")
     self.help_support_button.clicked.connect(self.open_kofi_link)
     support_row.addWidget(self.help_support_button)

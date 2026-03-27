@@ -20,6 +20,10 @@ That split keeps the scrapers reusable for developers while giving non-programme
 - displays summaries, metadata, links, tags, and source details
 - includes a configurable Ko-fi support button
 
+Default support link:
+
+- `https://ko-fi.com/ninezel`
+
 ## Desktop features
 
 - **Overview tab**: toolkit path, node path, output folder, health checks, latest files
