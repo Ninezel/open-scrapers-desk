@@ -18,10 +18,12 @@ That split keeps the scrapers reusable for developers while giving non-programme
 - scans JSON output folders automatically
 - shows records in a searchable desktop UI
 - displays summaries, metadata, links, tags, and source details
+- includes a configurable Ko-fi support button
 
 ## Desktop features
 
 - **Overview tab**: toolkit path, node path, output folder, health checks, latest files
+- **Overview tab** also stores your Ko-fi link and exposes a quick support button
 - **Run Scrapers tab**: scraper list, parameter inputs, output path selection, live run log
 - **Results Library tab**: output file browser, record table, detail pane, search
 - **Logs & Help tab**: quick start guidance and activity log
@@ -54,6 +56,12 @@ If the module launch form does not work in your shell, this also works:
 ```bash
 set PYTHONPATH=src
 python src/open_scrapers_desk/app.py
+```
+
+Optional support-link environment variable:
+
+```bash
+set OPEN_SCRAPERS_KOFI_URL=https://ko-fi.com/yourname
 ```
 
 ## Packaging the Windows executable

@@ -79,6 +79,14 @@ class MainWindow(QMainWindow):
     root_layout.addWidget(hero_title)
     root_layout.addWidget(hero_subtitle)
 
+    hero_actions = QHBoxLayout()
+    hero_actions.addStretch(1)
+    self.support_button = QPushButton("Support on Ko-fi")
+    self.support_button.setObjectName("SupportButton")
+    self.support_button.clicked.connect(self.open_kofi_link)
+    hero_actions.addWidget(self.support_button)
+    root_layout.addLayout(hero_actions)
+
     self.tabs = QTabWidget()
     self.tabs.addTab(self._build_overview_tab(), "Overview")
     self.tabs.addTab(self._build_run_tab(), "Run Scrapers")
@@ -122,6 +130,17 @@ class MainWindow(QMainWindow):
     output_row.addWidget(self.output_dir_edit)
     output_row.addWidget(output_browse)
     config_layout.addRow("Output directory", self._wrap_layout(output_row))
+
+    kofi_row = QHBoxLayout()
+    self.kofi_url_edit = QLineEdit()
+    self.kofi_url_edit.setPlaceholderText("https://ko-fi.com/yourname")
+    self.kofi_url_edit.setToolTip("Set your Ko-fi page URL so the app can open it.")
+    self.open_kofi_button = QPushButton("Open Ko-fi")
+    self.open_kofi_button.setObjectName("SupportButton")
+    self.open_kofi_button.clicked.connect(self.open_kofi_link)
+    kofi_row.addWidget(self.kofi_url_edit)
+    kofi_row.addWidget(self.open_kofi_button)
+    config_layout.addRow("Ko-fi link", self._wrap_layout(kofi_row))
 
     button_row = QHBoxLayout()
     save_button = QPushButton("Save Settings")
@@ -355,10 +374,18 @@ class MainWindow(QMainWindow):
         <li>Run <code>npm install</code> and <code>npm run build</code> in that repo.</li>
         <li>Point this app at the toolkit folder.</li>
       </ol>
+      <p>You can also add your Ko-fi URL on the Overview tab to show a built-in support button in the app.</p>
       <p>Need the docs? Open the project README and wiki after publishing this repo to GitHub.</p>
       """
     )
     help_layout.addWidget(help_browser)
+    support_row = QHBoxLayout()
+    support_row.addStretch(1)
+    self.help_support_button = QPushButton("Open Ko-fi Support Page")
+    self.help_support_button.setObjectName("SupportButton")
+    self.help_support_button.clicked.connect(self.open_kofi_link)
+    support_row.addWidget(self.help_support_button)
+    help_layout.addLayout(support_row)
     layout.addWidget(help_group)
 
     activity_group = QGroupBox("Activity Log")
@@ -386,7 +413,9 @@ class MainWindow(QMainWindow):
     self.toolkit_path_edit.setText(self.settings.toolkit_path)
     self.node_exec_edit.setText(self.settings.node_executable)
     self.output_dir_edit.setText(self.settings.output_dir)
+    self.kofi_url_edit.setText(self.settings.kofi_url)
     self.scraper_category_combo.setCurrentText(self.settings.last_category or "all")
+    self._refresh_support_button_state()
 
   def current_settings(self) -> AppSettings:
     toolkit_path = self.toolkit_path_edit.text().strip()
@@ -395,6 +424,7 @@ class MainWindow(QMainWindow):
       toolkit_path=toolkit_path,
       node_executable=self.node_exec_edit.text().strip() or "node",
       output_dir=output_dir,
+      kofi_url=self.kofi_url_edit.text().strip(),
       last_scraper_id=self.settings.last_scraper_id,
       last_category=self.scraper_category_combo.currentText(),
     )
@@ -404,6 +434,8 @@ class MainWindow(QMainWindow):
     self.settings_store.save(self.settings)
     self.log_activity("Settings saved.")
     self.output_dir_edit.setText(self.settings.output_dir)
+    self.kofi_url_edit.setText(self.settings.kofi_url)
+    self._refresh_support_button_state()
 
   def refresh_everything(self) -> None:
     self.save_settings()
@@ -748,6 +780,40 @@ class MainWindow(QMainWindow):
     output_dir = Path(self.output_dir_edit.text().strip() or self.settings.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
     QDesktopServices.openUrl(QUrl.fromLocalFile(str(output_dir)))
+
+  def open_kofi_link(self) -> None:
+    self.save_settings()
+    if not self.settings.kofi_url:
+      QMessageBox.information(
+        self,
+        "Ko-fi Link Missing",
+        "Add your Ko-fi URL on the Overview tab first, then the support button will open it.",
+      )
+      return
+
+    opened = QDesktopServices.openUrl(QUrl(self.settings.kofi_url))
+    if opened:
+      self.log_activity(f"Opened Ko-fi link: {self.settings.kofi_url}")
+    else:
+      QMessageBox.warning(
+        self,
+        "Could Not Open Link",
+        f"The app could not open this Ko-fi URL:\n{self.settings.kofi_url}",
+      )
+
+  def _refresh_support_button_state(self) -> None:
+    has_link = bool(self.settings.kofi_url)
+    self.support_button.setEnabled(has_link)
+    self.open_kofi_button.setEnabled(has_link)
+    self.help_support_button.setEnabled(has_link)
+    if has_link:
+      self.support_button.setToolTip(self.settings.kofi_url)
+      self.open_kofi_button.setToolTip(self.settings.kofi_url)
+      self.help_support_button.setToolTip(self.settings.kofi_url)
+    else:
+      self.support_button.setToolTip("Add your Ko-fi URL on the Overview tab.")
+      self.open_kofi_button.setToolTip("Add your Ko-fi URL on the Overview tab.")
+      self.help_support_button.setToolTip("Add your Ko-fi URL on the Overview tab.")
 
   def _browse_toolkit_path(self) -> None:
     path = QFileDialog.getExistingDirectory(self, "Choose Toolkit Repository", self.toolkit_path_edit.text())

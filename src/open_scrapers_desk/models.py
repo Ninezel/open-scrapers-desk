@@ -36,6 +36,7 @@ class AppSettings:
   toolkit_path: str = ""
   node_executable: str = "node"
   output_dir: str = ""
+  kofi_url: str = ""
   last_scraper_id: str = ""
   last_category: str = "all"
 

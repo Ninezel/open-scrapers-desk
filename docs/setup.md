@@ -47,6 +47,7 @@ On the Overview tab:
 - set the toolkit path
 - confirm the node executable
 - set the output directory
+- add your Ko-fi link if you want the built-in support button enabled
 - click **Validate Backend**
 
 ## 5. Run a scraper

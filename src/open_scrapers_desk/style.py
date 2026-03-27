@@ -57,6 +57,12 @@ QPushButton:hover {
 QPushButton:disabled {
   background: #8ca9ad;
 }
+QPushButton#SupportButton {
+  background: #b45a2a;
+}
+QPushButton#SupportButton:hover {
+  background: #91461f;
+}
 QHeaderView::section {
   background: #e9dcc8;
   color: #13232f;

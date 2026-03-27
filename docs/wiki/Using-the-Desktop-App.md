@@ -2,7 +2,7 @@
 
 ## Overview
 
-Use this tab to configure paths and validate the backend.
+Use this tab to configure paths, validate the backend, and set the Ko-fi URL used by the app's support button.
 
 ## Run Scrapers
 

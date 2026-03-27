@@ -15,6 +15,19 @@ COMMON_TOOLKIT_NAMES = [
 ]
 
 
+def default_kofi_url() -> str:
+  return os.environ.get("OPEN_SCRAPERS_KOFI_URL", "").strip()
+
+
+def normalize_url(value: str) -> str:
+  url = value.strip()
+  if not url:
+    return ""
+  if url.startswith(("http://", "https://")):
+    return url
+  return f"https://{url}"
+
+
 def app_data_dir() -> Path:
   base = Path(os.environ.get("APPDATA", Path.home() / "AppData" / "Roaming"))
   path = base / "OpenScrapersDesk"
@@ -71,6 +84,7 @@ class SettingsStore:
       settings = AppSettings(
         toolkit_path=toolkit_path,
         output_dir=default_output_dir(toolkit_path),
+        kofi_url=default_kofi_url(),
       )
       self.save(settings)
       return settings
@@ -83,6 +97,7 @@ class SettingsStore:
       toolkit_path=toolkit_path,
       node_executable=raw.get("node_executable", "node"),
       output_dir=output_dir,
+      kofi_url=normalize_url(raw.get("kofi_url", "") or default_kofi_url()),
       last_scraper_id=raw.get("last_scraper_id", ""),
       last_category=raw.get("last_category", "all"),
     )
@@ -92,6 +107,7 @@ class SettingsStore:
       "toolkit_path": settings.toolkit_path,
       "node_executable": settings.node_executable,
       "output_dir": settings.output_dir,
+      "kofi_url": normalize_url(settings.kofi_url),
       "last_scraper_id": settings.last_scraper_id,
       "last_category": settings.last_category,
     }
