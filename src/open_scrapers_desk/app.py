@@ -1,12 +1,17 @@
 from __future__ import annotations
 
 import sys
+from pathlib import Path
 
 from PyQt6.QtWidgets import QApplication
 
-from .settings import SettingsStore
-from .style import APP_STYLE
-from .ui.main_window import MainWindow
+# Support both package execution and direct script execution.
+if __package__ in {None, ""}:
+  sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+from open_scrapers_desk.settings import SettingsStore
+from open_scrapers_desk.style import APP_STYLE
+from open_scrapers_desk.ui.main_window import MainWindow
 
 
 def main() -> int:
