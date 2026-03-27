@@ -4,6 +4,8 @@ Open Scrapers Desk is the desktop companion for the separate Open Scrapers Toolk
 
 This wiki is the long-form operational guide for the desktop app. It explains how the app connects to the toolkit, how its tabs work, where it stores settings, how Windows packaging is handled, and how to publish releases without breaking the backend relationship.
 
+![Open Scrapers Desk overview tab](images/desk-overview.png)
+
 ## Who this repository is for
 
 - users who want a GUI for the scraper toolkit
@@ -45,6 +47,8 @@ The app can:
 - open source links and output folders
 - expose a built-in Ko-fi support button
 
+![Open Scrapers Desk results library](images/desk-results-library.png)
+
 ## Typical first-run workflow
 
 1. Prepare the toolkit repository with `npm install` and `npm run build`.
@@ -75,3 +79,11 @@ If you are packaging or publishing:
 
 - read [Packaging Windows Builds](Packaging-Windows-Builds.md)
 - then [Publishing Releases](Publishing-Releases.md)
+
+## Refreshing the screenshots
+
+The desktop wiki screenshots are generated from the live application through an offscreen capture script:
+
+```powershell
+python scripts\capture_wiki_screenshots.py
+```
