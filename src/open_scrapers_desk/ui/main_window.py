@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -33,6 +34,7 @@ from PyQt6.QtWidgets import (
 )
 
 from ..backend import (
+  build_health_command,
   build_run_all_command,
   build_run_command,
   describe_command,
@@ -51,6 +53,7 @@ from ..models import (
   WorkspaceProfile,
 )
 from ..results import (
+  build_payload_comparison_html,
   build_library_summary_html,
   build_payload_summary_html,
   filter_records,
@@ -92,6 +95,8 @@ class MainWindow(QMainWindow):
     self.refresh_backend_status()
     self.refresh_catalog()
     self.refresh_results()
+    self.refresh_health_summary()
+    self._show_onboarding_if_needed()
 
   def _build_ui(self) -> None:
     root = QWidget()
@@ -193,6 +198,21 @@ class MainWindow(QMainWindow):
     kofi_row.addWidget(self.kofi_url_edit)
     kofi_row.addWidget(self.open_kofi_button)
     config_layout.addRow("Ko-fi link", self._wrap_layout(kofi_row))
+
+    self.alert_webhook_edit = QLineEdit()
+    self.alert_webhook_edit.setPlaceholderText("Optional generic health alert webhook URL")
+    self.alert_webhook_edit.setToolTip("Used when previewing or running health alert publishing workflows.")
+    config_layout.addRow("Alert webhook", self.alert_webhook_edit)
+
+    self.alert_discord_webhook_edit = QLineEdit()
+    self.alert_discord_webhook_edit.setPlaceholderText("Optional Discord webhook URL for health alerts")
+    self.alert_discord_webhook_edit.setToolTip("Used when previewing or running Discord health alert workflows.")
+    config_layout.addRow("Discord alert webhook", self.alert_discord_webhook_edit)
+
+    self.discord_preset_combo = QComboBox()
+    self.discord_preset_combo.addItems(["rich", "compact", "alerts"])
+    self.discord_preset_combo.setToolTip("Default Discord formatting preset for bridge examples and automation helpers.")
+    config_layout.addRow("Discord preset", self.discord_preset_combo)
 
     button_row = QHBoxLayout()
     save_button = QPushButton("Save Settings")
@@ -338,10 +358,16 @@ class MainWindow(QMainWindow):
     self.run_category_button.clicked.connect(self.run_selected_category)
     self.run_all_button = QPushButton("Queue All")
     self.run_all_button.clicked.connect(self.run_all_scrapers)
+    self.preview_run_button = QPushButton("Preview Run Command")
+    self.preview_run_button.clicked.connect(self.preview_selected_run_command)
+    self.preview_health_button = QPushButton("Preview Health Command")
+    self.preview_health_button.clicked.connect(self.preview_health_command)
     actions_row.addWidget(self.refresh_catalog_button)
     actions_row.addWidget(self.run_selected_button)
     actions_row.addWidget(self.run_category_button)
     actions_row.addWidget(self.run_all_button)
+    actions_row.addWidget(self.preview_run_button)
+    actions_row.addWidget(self.preview_health_button)
     run_layout.addRow(actions_row)
 
     queue_group = QGroupBox("Pending Job Queue")
@@ -400,6 +426,16 @@ class MainWindow(QMainWindow):
     library_layout.addWidget(self.library_summary_browser)
     layout.addWidget(library_group)
 
+    comparison_group = QGroupBox("Compare Selected Result Files")
+    comparison_layout = QVBoxLayout(comparison_group)
+    self.compare_summary_browser = QTextBrowser()
+    self.compare_summary_browser.setMaximumHeight(200)
+    self.compare_summary_browser.setHtml(
+      "<i>Select two result files in the table below to compare them.</i>"
+    )
+    comparison_layout.addWidget(self.compare_summary_browser)
+    layout.addWidget(comparison_group)
+
     splitter = QSplitter(Qt.Orientation.Horizontal)
 
     file_group = QGroupBox("Result Files")
@@ -410,7 +446,7 @@ class MainWindow(QMainWindow):
     )
     self.result_files_table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
     self.result_files_table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
-    self.result_files_table.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
+    self.result_files_table.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
     self.result_files_table.verticalHeader().setVisible(False)
     self.result_files_table.itemSelectionChanged.connect(self._on_result_file_selected)
     file_layout.addWidget(self.result_files_table)
@@ -528,6 +564,9 @@ class MainWindow(QMainWindow):
     self.node_exec_edit.setText(self.settings.node_executable)
     self.output_dir_edit.setText(self.settings.output_dir)
     self.kofi_url_edit.setText(self.settings.kofi_url)
+    self.alert_webhook_edit.setText(self.settings.alert_webhook_url)
+    self.alert_discord_webhook_edit.setText(self.settings.alert_discord_webhook_url)
+    self.discord_preset_combo.setCurrentText(self.settings.discord_format_preset or "rich")
     self.default_save_format_combo.setCurrentText(self.settings.save_format or "json")
     self.run_save_format_combo.setCurrentText(self.settings.save_format or "json")
     self.scraper_category_combo.setCurrentText(self.settings.last_category or "all")
@@ -542,6 +581,10 @@ class MainWindow(QMainWindow):
       node_executable=self.node_exec_edit.text().strip() or "node",
       output_dir=output_dir,
       kofi_url=self.kofi_url_edit.text().strip(),
+      alert_webhook_url=self.alert_webhook_edit.text().strip(),
+      alert_discord_webhook_url=self.alert_discord_webhook_edit.text().strip(),
+      discord_format_preset=self.discord_preset_combo.currentText(),
+      first_run_completed=self.settings.first_run_completed,
       save_format=self.default_save_format_combo.currentText(),
       last_scraper_id=self.settings.last_scraper_id,
       last_category=self.scraper_category_combo.currentText(),
@@ -569,6 +612,9 @@ class MainWindow(QMainWindow):
     self.settings_store.save(self.settings)
     self.output_dir_edit.setText(self.settings.output_dir)
     self.kofi_url_edit.setText(self.settings.kofi_url)
+    self.alert_webhook_edit.setText(self.settings.alert_webhook_url)
+    self.alert_discord_webhook_edit.setText(self.settings.alert_discord_webhook_url)
+    self.discord_preset_combo.setCurrentText(self.settings.discord_format_preset)
     self.run_save_format_combo.setCurrentText(self.settings.save_format)
     self._refresh_support_button_state()
     self._refresh_workspace_combo()
@@ -683,10 +729,14 @@ class MainWindow(QMainWindow):
 
     if self.result_files:
       self.result_files_table.selectRow(0)
+      self.compare_summary_browser.setHtml(
+        "<i>Select a second result file to compare payloads side by side.</i>"
+      )
     else:
       self.record_table.setRowCount(0)
       self.payload_summary_browser.setHtml("<i>No payload selected yet.</i>")
       self.record_detail_browser.setHtml("<i>No result files found yet.</i>")
+      self.compare_summary_browser.setHtml("<i>No result files found yet.</i>")
       self.result_meta_label.setText("No result files found.")
 
     self.log_activity(f"Found {len(self.result_files)} result files.")
@@ -753,6 +803,56 @@ class MainWindow(QMainWindow):
 
   def _collect_scraper_params(self) -> dict[str, str]:
     return {key: widget.text().strip() for key, widget in self.param_inputs.items() if widget.text().strip()}
+
+  def preview_selected_run_command(self) -> None:
+    scraper = self._selected_scraper()
+    if scraper is None:
+      QMessageBox.information(self, "No Scraper Selected", "Choose a scraper first.")
+      return
+
+    params = self._collect_scraper_params()
+    output_path = self.output_file_edit.text().strip()
+    if not output_path:
+      QMessageBox.warning(self, "Output Path Required", "Choose an output file path.")
+      return
+
+    try:
+      program, args, _ = build_run_command(
+        self.settings.toolkit_path,
+        self.settings.node_executable,
+        scraper.id,
+        self.limit_spin.value(),
+        output_path,
+        params,
+        self.run_save_format_combo.currentText(),
+      )
+    except Exception as error:  # noqa: BLE001
+      QMessageBox.warning(self, "Preview Failed", str(error))
+      return
+
+    command = describe_command(program, args)
+    self.run_log.appendPlainText(f"# Preview\n{command}")
+    self.log_activity(f"Previewed run command for {scraper.id}.")
+    self.tabs.setCurrentIndex(1)
+
+  def preview_health_command(self) -> None:
+    try:
+      program, args, _ = build_health_command(
+        self.settings.toolkit_path,
+        self.settings.node_executable,
+        category=self.scraper_category_combo.currentText(),
+        limit=1,
+        alert_webhook_url=self.alert_webhook_edit.text().strip(),
+        alert_discord_webhook_url=self.alert_discord_webhook_edit.text().strip(),
+      )
+    except Exception as error:  # noqa: BLE001
+      QMessageBox.warning(self, "Preview Failed", str(error))
+      return
+
+    command = describe_command(program, args)
+    self.run_log.appendPlainText(f"# Health Preview\n{command}")
+    self.log_activity("Previewed a health command with the current alert settings.")
+    self.tabs.setCurrentIndex(1)
 
   def run_selected_scraper(self) -> None:
     scraper = self._selected_scraper()
@@ -912,6 +1012,8 @@ class MainWindow(QMainWindow):
     if not selected_items:
       return
 
+    self._refresh_payload_comparison()
+
     path = selected_items[0].data(Qt.ItemDataRole.UserRole)
     try:
       self.current_payload = load_result_payload(path)
@@ -925,6 +1027,29 @@ class MainWindow(QMainWindow):
     except Exception as error:  # noqa: BLE001
       self.log_activity(f"Could not load result file {path}: {error}")
       QMessageBox.warning(self, "Result Load Failed", str(error))
+
+  def _refresh_payload_comparison(self) -> None:
+    row_indexes = sorted({item.row() for item in self.result_files_table.selectedItems()})
+
+    if len(row_indexes) < 2:
+      self.compare_summary_browser.setHtml(
+        "<i>Select two result files in the table to compare them.</i>"
+      )
+      return
+
+    left_path = self.result_files_table.item(row_indexes[0], 0).data(Qt.ItemDataRole.UserRole)
+    right_path = self.result_files_table.item(row_indexes[1], 0).data(Qt.ItemDataRole.UserRole)
+
+    try:
+      left_payload = load_result_payload(left_path)
+      right_payload = load_result_payload(right_path)
+      self.compare_summary_browser.setHtml(
+        build_payload_comparison_html(left_payload, right_payload)
+      )
+    except Exception as error:  # noqa: BLE001
+      self.compare_summary_browser.setHtml(
+        f"<i>Could not compare the selected payloads: {error}</i>"
+      )
 
   def _refresh_record_table(self) -> None:
     if self.current_payload is None:
@@ -1043,6 +1168,32 @@ class MainWindow(QMainWindow):
       self.support_button.setToolTip("Add your Ko-fi URL on the Overview tab.")
       self.open_kofi_button.setToolTip("Add your Ko-fi URL on the Overview tab.")
       self.help_support_button.setToolTip("Add your Ko-fi URL on the Overview tab.")
+
+  def _show_onboarding_if_needed(self) -> None:
+    if self.settings.first_run_completed:
+      return
+
+    if os.environ.get("OPEN_SCRAPERS_SKIP_ONBOARDING") == "1":
+      return
+
+    if os.environ.get("QT_QPA_PLATFORM", "").strip().lower() == "offscreen":
+      return
+
+    QMessageBox.information(
+      self,
+      "Welcome To Open Scrapers Desk",
+      (
+        "Start on the Overview tab.\n\n"
+        "1. Point the app at your Open Scrapers Toolkit folder.\n"
+        "2. Confirm the Node executable.\n"
+        "3. Choose an output directory.\n"
+        "4. Refresh backend status, catalog, and health.\n"
+        "5. Use the Run Scrapers tab to queue a scraper.\n\n"
+        "You can also preview automation commands and compare saved result files."
+      ),
+    )
+    self.settings.first_run_completed = True
+    self.settings_store.save(self.settings)
 
   def save_workspace(self) -> None:
     suggested_name = self.workspace_combo.currentText()

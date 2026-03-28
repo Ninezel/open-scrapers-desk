@@ -205,5 +205,29 @@ def fetch_health_summary(toolkit_path: str, node_executable: str) -> list[Source
   ]
 
 
+def build_health_command(
+  toolkit_path: str,
+  node_executable: str,
+  *,
+  category: str = "",
+  limit: int = 1,
+  alert_webhook_url: str = "",
+  alert_discord_webhook_url: str = "",
+) -> tuple[str, list[str], str]:
+  program, base_args, working_dir, _ = _cli_invocation(
+    Path(toolkit_path),
+    node_executable,
+    prefer_source=True,
+  )
+  args = [*base_args, "health", "--limit", str(limit), "--format", "table"]
+  if category and category != "all":
+    args.extend(["--category", category])
+  if alert_webhook_url.strip():
+    args.extend(["--alert-webhook", alert_webhook_url.strip()])
+  if alert_discord_webhook_url.strip():
+    args.extend(["--alert-discord-webhook", alert_discord_webhook_url.strip()])
+  return program, args, str(working_dir)
+
+
 def describe_command(program: str, args: Sequence[str]) -> str:
   return " ".join([program, *args])

@@ -42,8 +42,10 @@ python src/open_scrapers_desk/app.py
 2. Set the Node executable.
 3. Choose the output directory.
 4. Pick a default save format.
-5. Save settings or save a named workspace.
-6. Refresh backend status, catalog, and source health.
+5. Optionally set health alert webhook targets.
+6. Pick a Discord formatting preset if you use the Python bridge.
+7. Save settings or save a named workspace.
+8. Refresh backend status, catalog, and source health.
 
 ## Discord bot bridge
 
@@ -71,3 +73,10 @@ Use the Python bridge when you want:
 - a scheduled script
 - a small internal automation service
 - Python-side control over when and how scraper results are published
+
+## New desktop helpers
+
+- compare two saved payloads from the Results Library
+- preview run commands before wiring them into Task Scheduler or cron
+- preview health commands with alert webhook options
+- keep reusable workspaces for different toolkit/output combinations

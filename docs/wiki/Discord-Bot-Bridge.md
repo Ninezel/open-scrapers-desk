@@ -21,6 +21,13 @@ The bridge still needs:
 - `run_scraper_payload()`
 - `payload_to_discord_messages()`
 - `run_scraper_to_discord_messages()`
+- `run_scraper_to_preset_messages()`
+
+Built-in presets:
+
+- `compact`
+- `rich`
+- `alerts`
 
 ## Example
 
@@ -40,6 +47,8 @@ Returned payloads are plain dictionaries so they can be adapted to `discord.py` 
 Starter file:
 
 - `examples/discord-bots/discord-py-message-command.py`
+- `examples/discord-bots/discord-preset-command.py`
+- `examples/automation/scheduled-discord-webhook.py`
 
 Related pages:
 

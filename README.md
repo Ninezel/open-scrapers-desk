@@ -16,9 +16,13 @@ Repository split:
 - queues a selected scraper, a whole category, or the full catalog
 - shows source-health status from the toolkit `health` command
 - scans result folders automatically
-- displays summary views for the whole library and individual result payloads
+- displays dashboard-style summary views for the whole library and individual result payloads
+- compares two saved result payloads side by side
 - stores saved workspaces for different toolkit/output combinations
 - exposes Python helper functions for Discord bots and automation scripts
+- previews run and health-alert automation commands
+- provides Discord formatting presets for Python-side integrations
+- produces both a zip bundle and SHA256 checksum during local Windows packaging
 - includes a configurable Ko-fi support button
 
 Default support link:
@@ -27,9 +31,9 @@ Default support link:
 
 ## Desktop features
 
-- **Overview tab**: toolkit path, node path, output folder, default save format, saved workspaces, source-health snapshot, latest files
-- **Run Scrapers tab**: scraper list, parameter inputs, output path selection, save format, pending job queue, live run log
-- **Results Library tab**: library summary, output file browser, record table, detail pane, search
+- **Overview tab**: toolkit path, node path, output folder, default save format, saved workspaces, source-health snapshot, alert webhook settings, latest files
+- **Run Scrapers tab**: scraper list, parameter inputs, output path selection, save format, pending job queue, live run log, automation command previews
+- **Results Library tab**: dashboard summaries, output file browser, compare view, record table, detail pane, search
 - **Logs & Help tab**: quick start guidance and activity log
 
 ## Local development
@@ -71,9 +75,17 @@ messages = run_scraper_to_discord_messages(
 )
 ```
 
+Preset-based bridge helper:
+
+```python
+from open_scrapers_desk.discord_bridge import run_scraper_to_preset_messages
+```
+
 Starter example:
 
 - `examples/discord-bots/discord-py-message-command.py`
+- `examples/discord-bots/discord-preset-command.py`
+- `examples/automation/scheduled-discord-webhook.py`
 
 ## Toolkit setup
 
@@ -101,6 +113,11 @@ python scripts/build_exe.py
 
 This creates a Windows app bundle in `dist/OpenScrapersDesk/`.
 
+It also creates:
+
+- `release/OpenScrapersDesk-windows.zip`
+- `release/OpenScrapersDesk-windows.zip.sha256`
+
 The GitHub Actions workflow also creates a zipped artifact:
 
 - `.github/workflows/build-windows.yml`
@@ -115,16 +132,17 @@ The GitHub Actions workflow also creates a zipped artifact:
 - [Packaging and release guide](docs/packaging.md)
 - [Publishing checklist](docs/publishing.md)
 - [Release workflow](docs/release-workflow.md)
+- [Troubleshooting](docs/troubleshooting.md)
 - [Wiki source pages](docs/wiki/Home.md)
 
 ## Next roadmap focus
 
 Current next-step priorities for the desktop repo are:
 
-- richer result presentation with charts, dashboards, and better comparison views
-- more automation around scheduled runs, notifications, and publishing
-- stronger Discord and webhook publishing workflows around the shared toolkit data
-- smoother packaging through installer polish, signing, and release automation
+- recurring job execution instead of command previews alone
+- richer publish flows around Discord and generic webhooks
+- more polished installer and signing workflows
+- more onboarding, troubleshooting, and accessibility improvements
 
 The fuller planning notes live in [docs/roadmap.md](docs/roadmap.md).
 

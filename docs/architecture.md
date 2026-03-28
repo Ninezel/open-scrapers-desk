@@ -17,6 +17,8 @@ Important modules:
 3. It reads the scraper catalog from `open-scrapers-toolkit`.
 4. It builds CLI commands for run and batch actions.
 5. It queues jobs and executes them sequentially through `QProcess`.
-6. It scans saved outputs and renders both record-level and library-level summaries.
+6. It scans saved outputs and renders both record-level and library-level dashboard summaries.
+7. It can compare two saved payloads and preview automation commands for scheduled runs and health alerts.
+8. It persists workspaces, webhook targets, and Discord bridge preset choices.
 
 The Discord bridge reuses the same backend command building so Python bot automations and the desktop app stay consistent.

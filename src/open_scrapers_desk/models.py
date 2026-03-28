@@ -39,6 +39,10 @@ class AppSettings:
   node_executable: str = "node"
   output_dir: str = ""
   kofi_url: str = ""
+  alert_webhook_url: str = ""
+  alert_discord_webhook_url: str = ""
+  discord_format_preset: str = "rich"
+  first_run_completed: bool = False
   save_format: str = "json"
   last_scraper_id: str = ""
   last_category: str = "all"

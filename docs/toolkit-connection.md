@@ -17,5 +17,6 @@ The app uses the toolkit CLI for:
 - scraper runs
 - batch runs
 - source-health reporting
+- automation command previews for run and health workflows
 
 The Python Discord bridge in this repo also uses the toolkit CLI under the hood so bot integrations stay aligned with the same scraper behavior as the desktop app.

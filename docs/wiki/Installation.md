@@ -19,4 +19,6 @@ Recommended next pages:
 
 - [Connecting To The Toolkit](Connecting-to-the-Toolkit)
 - [Discord Bot Bridge](Discord-Bot-Bridge)
+- [Using The Desktop App](Using-the-Desktop-App)
+- [Troubleshooting](Troubleshooting)
 - [Roadmap](Roadmap)

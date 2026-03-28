@@ -99,6 +99,19 @@ def format_meta_html(meta: dict[str, Any]) -> str:
   return "<table cellspacing='6'>" + "".join(rows) + "</table>"
 
 
+def _metric_bar(label: str, value: int, max_value: int) -> str:
+  width = 12 if max_value <= 0 else max(12, round((value / max_value) * 100))
+  safe_label = label or "unknown"
+  return (
+    f"<div style='margin:6px 0;'>"
+    f"<div><b>{safe_label}</b> ({value})</div>"
+    f"<div style='background:#d7ddd8;border-radius:999px;height:10px;overflow:hidden;'>"
+    f"<div style='background:#0f5e4f;height:10px;width:{width}%;'></div>"
+    f"</div>"
+    f"</div>"
+  )
+
+
 def build_library_summary_html(result_files: list[ResultFileSummary]) -> str:
   if not result_files:
     return "<i>No saved result files yet.</i>"
@@ -106,25 +119,41 @@ def build_library_summary_html(result_files: list[ResultFileSummary]) -> str:
   category_counts = Counter(summary.category for summary in result_files)
   source_counts = Counter(summary.source for summary in result_files if summary.source)
   total_records = sum(summary.record_count for summary in result_files)
+  max_category = max(category_counts.values(), default=1)
+  max_source = max(source_counts.values(), default=1)
   recent_files = "".join(
     f"<li>{summary.scraper_name} ({summary.record_count} records, {summary.fetched_at})</li>"
     for summary in result_files[:5]
   )
   category_html = "".join(
-    f"<li>{category}: {count}</li>" for category, count in category_counts.most_common()
+    _metric_bar(category, count, max_category)
+    for category, count in category_counts.most_common()
   )
   source_html = "".join(
-    f"<li>{source}: {count}</li>" for source, count in source_counts.most_common(5)
+    _metric_bar(source, count, max_source)
+    for source, count in source_counts.most_common(5)
   )
 
   return f"""
     <h3>Library Snapshot</h3>
-    <p><b>Files:</b> {len(result_files)}<br>
-    <b>Total records:</b> {total_records}</p>
+    <div style='display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;'>
+      <div style='background:#f4f6f5;padding:12px 14px;border-radius:12px;min-width:140px;'>
+        <div style='font-size:12px;color:#5b6b65;'>Files</div>
+        <div style='font-size:24px;font-weight:700;'>{len(result_files)}</div>
+      </div>
+      <div style='background:#f4f6f5;padding:12px 14px;border-radius:12px;min-width:140px;'>
+        <div style='font-size:12px;color:#5b6b65;'>Total records</div>
+        <div style='font-size:24px;font-weight:700;'>{total_records}</div>
+      </div>
+      <div style='background:#f4f6f5;padding:12px 14px;border-radius:12px;min-width:180px;'>
+        <div style='font-size:12px;color:#5b6b65;'>Latest source</div>
+        <div style='font-size:18px;font-weight:700;'>{result_files[0].source}</div>
+      </div>
+    </div>
     <h4>By category</h4>
-    <ul>{category_html}</ul>
+    {category_html}
     <h4>Top sources</h4>
-    <ul>{source_html}</ul>
+    {source_html}
     <h4>Latest files</h4>
     <ul>{recent_files}</ul>
   """
@@ -136,24 +165,76 @@ def build_payload_summary_html(payload: ResultPayload) -> str:
 
   tag_counts = Counter(tag for record in payload.records for tag in record.tags)
   author_counts = Counter(author for record in payload.records for author in record.authors)
+  location_counts = Counter(record.location for record in payload.records if record.location)
+  max_tags = max(tag_counts.values(), default=1)
+  max_authors = max(author_counts.values(), default=1)
+  max_locations = max(location_counts.values(), default=1)
   recent_titles = "".join(
     f"<li>{record.title}</li>" for record in payload.records[:5]
   )
-  tag_html = "".join(f"<li>{tag}: {count}</li>" for tag, count in tag_counts.most_common(8))
+  tag_html = "".join(_metric_bar(tag, count, max_tags) for tag, count in tag_counts.most_common(8))
   author_html = "".join(
-    f"<li>{author}: {count}</li>" for author, count in author_counts.most_common(5)
+    _metric_bar(author, count, max_authors) for author, count in author_counts.most_common(5)
+  )
+  location_html = "".join(
+    _metric_bar(location, count, max_locations)
+    for location, count in location_counts.most_common(5)
   )
 
   return f"""
     <h3>{payload.scraper_name}</h3>
-    <p><b>Category:</b> {payload.category}<br>
-    <b>Source:</b> {payload.source}<br>
-    <b>Records:</b> {len(payload.records)}<br>
-    <b>Fetched:</b> {payload.fetched_at}</p>
+    <div style='display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;'>
+      <div style='background:#f4f6f5;padding:12px 14px;border-radius:12px;min-width:140px;'>
+        <div style='font-size:12px;color:#5b6b65;'>Category</div>
+        <div style='font-size:18px;font-weight:700;'>{payload.category}</div>
+      </div>
+      <div style='background:#f4f6f5;padding:12px 14px;border-radius:12px;min-width:160px;'>
+        <div style='font-size:12px;color:#5b6b65;'>Records</div>
+        <div style='font-size:24px;font-weight:700;'>{len(payload.records)}</div>
+      </div>
+      <div style='background:#f4f6f5;padding:12px 14px;border-radius:12px;min-width:220px;'>
+        <div style='font-size:12px;color:#5b6b65;'>Source</div>
+        <div style='font-size:18px;font-weight:700;'>{payload.source}</div>
+      </div>
+    </div>
+    <p><b>Fetched:</b> {payload.fetched_at}</p>
     <h4>Top tags</h4>
-    <ul>{tag_html or '<li>None</li>'}</ul>
+    {tag_html or '<p><i>None</i></p>'}
     <h4>Top authors</h4>
-    <ul>{author_html or '<li>None</li>'}</ul>
+    {author_html or '<p><i>None</i></p>'}
+    <h4>Top locations</h4>
+    {location_html or '<p><i>None</i></p>'}
     <h4>First records</h4>
     <ul>{recent_titles}</ul>
+  """
+
+
+def build_payload_comparison_html(left: ResultPayload, right: ResultPayload) -> str:
+  left_tags = set(tag for record in left.records for tag in record.tags)
+  right_tags = set(tag for record in right.records for tag in record.tags)
+  left_authors = set(author for record in left.records for author in record.authors)
+  right_authors = set(author for record in right.records for author in record.authors)
+
+  shared_tags = sorted(left_tags & right_tags)[:8]
+  shared_authors = sorted(left_authors & right_authors)[:8]
+
+  return f"""
+    <h3>Compare Payloads</h3>
+    <table cellspacing='8'>
+      <tr><td><b>Left</b></td><td>{left.scraper_name}</td></tr>
+      <tr><td><b>Right</b></td><td>{right.scraper_name}</td></tr>
+      <tr><td><b>Record count</b></td><td>{len(left.records)} vs {len(right.records)}</td></tr>
+      <tr><td><b>Category</b></td><td>{left.category} vs {right.category}</td></tr>
+      <tr><td><b>Source</b></td><td>{left.source} vs {right.source}</td></tr>
+      <tr><td><b>Fetched</b></td><td>{left.fetched_at} vs {right.fetched_at}</td></tr>
+    </table>
+    <h4>Shared tags</h4>
+    <p>{', '.join(shared_tags) if shared_tags else 'None'}</p>
+    <h4>Shared authors</h4>
+    <p>{', '.join(shared_authors) if shared_authors else 'None'}</p>
+    <h4>Quick reading note</h4>
+    <p>
+      {left.scraper_name} leans toward {left.category} records from {left.source},
+      while {right.scraper_name} currently contains {len(right.records)} records from {right.source}.
+    </p>
   """

@@ -42,7 +42,8 @@ You also need:
 2. Call `run_scraper_payload()` if you want the normalized result object in Python.
 3. Call `payload_to_discord_messages()` if you want to format an existing payload.
 4. Call `run_scraper_to_discord_messages()` if you want one function to both scrape and format.
-5. Send the resulting payload dictionaries through your Discord library.
+5. Call `run_scraper_to_preset_messages()` if you want a quick compact, rich, or alert-style format.
+6. Send the resulting payload dictionaries through your Discord library.
 
 ## Function guide
 
@@ -85,6 +86,21 @@ messages = run_scraper_to_discord_messages(
 )
 ```
 
+### `run_scraper_to_preset_messages()`
+
+Use this when you want a built-in formatting preset:
+
+```python
+from open_scrapers_desk.discord_bridge import run_scraper_to_preset_messages
+
+messages = run_scraper_to_preset_messages(
+  r"g:\Scrapers",
+  "node",
+  "bbc-world-news",
+  preset="compact",
+)
+```
+
 ## Returned payload shape
 
 Each returned item is a plain dictionary shaped like:
@@ -111,6 +127,17 @@ This keeps the bridge flexible across Discord libraries.
 Starter example:
 
 - `examples/discord-bots/discord-py-message-command.py`
+- `examples/discord-bots/discord-preset-command.py`
+
+## Presets
+
+Built-in presets:
+
+- `compact`
+- `rich`
+- `alerts`
+
+Use them through `run_scraper_to_preset_messages()` when you want channel-ready defaults without repeating the same formatting arguments in every command handler.
 
 The basic flow is:
 
@@ -126,6 +153,14 @@ The basic flow is:
 - Validate user-supplied scraper IDs or maintain an allowlist.
 - Keep the toolkit built and ready so bot commands stay fast.
 - Remember that source-health and result availability depend on the upstream public endpoints.
+
+## Automation example
+
+See:
+
+- `examples/automation/scheduled-discord-webhook.py`
+
+This example shows a Python-side scheduled workflow that runs a scraper through the bridge, formats the result with a preset, and posts the messages to a Discord webhook using only the standard library.
 
 ## Related docs
 

@@ -11,4 +11,5 @@ CI build:
 - smoke tests the app
 - builds the PyInstaller bundle
 - creates a zip file
-- uploads both artifacts
+- creates a checksum file
+- uploads the folder, zip, and checksum artifacts

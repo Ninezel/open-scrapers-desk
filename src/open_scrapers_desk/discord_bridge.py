@@ -9,6 +9,27 @@ from .backend import build_run_command
 from .models import ResultPayload, ResultRecord
 from .results import load_result_payload
 
+DISCORD_FORMAT_PRESETS: dict[str, dict[str, Any]] = {
+  "compact": {
+    "include_metadata": False,
+    "max_embeds_per_message": 1,
+    "max_records": 1,
+    "title_prefix": "[Update]",
+  },
+  "rich": {
+    "include_metadata": False,
+    "max_embeds_per_message": 3,
+    "max_records": 3,
+    "title_prefix": "",
+  },
+  "alerts": {
+    "include_metadata": True,
+    "max_embeds_per_message": 5,
+    "max_records": 5,
+    "title_prefix": "[Alert]",
+  },
+}
+
 
 def _truncate(value: str, limit: int) -> str:
   if len(value) <= limit:
@@ -166,4 +187,29 @@ def run_scraper_to_discord_messages(
     max_embeds_per_message=max_embeds_per_message,
     max_records=max_records,
     title_prefix=title_prefix,
+  )
+
+
+def run_scraper_to_preset_messages(
+  toolkit_path: str,
+  node_executable: str,
+  scraper_id: str,
+  *,
+  preset: str = "rich",
+  limit: int = 3,
+  params: dict[str, str] | None = None,
+  timeout: int = 180,
+) -> list[dict[str, Any]]:
+  options = DISCORD_FORMAT_PRESETS.get(preset, DISCORD_FORMAT_PRESETS["rich"])
+  return run_scraper_to_discord_messages(
+    toolkit_path,
+    node_executable,
+    scraper_id,
+    limit=limit,
+    params=params,
+    timeout=timeout,
+    include_metadata=bool(options["include_metadata"]),
+    max_embeds_per_message=int(options["max_embeds_per_message"]),
+    max_records=int(options["max_records"]),
+    title_prefix=str(options["title_prefix"]),
   )

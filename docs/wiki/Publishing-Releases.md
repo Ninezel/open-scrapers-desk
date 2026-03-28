@@ -4,7 +4,7 @@
 2. run the smoke test
 3. build the executable
 4. verify toolkit integration still works
-5. update `CHANGELOG.md` with the current date
+5. update `CHANGELOG.md` with the current date and timestamp
 6. update repo docs and wiki source pages
 7. commit with a detailed message
 8. push the repo

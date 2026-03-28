@@ -7,10 +7,13 @@ Current highlights:
 - saved workspaces
 - queue-based job running
 - source-health snapshot
-- library and payload summaries
+- dashboard-style library and payload summaries
+- compare view for two saved payloads
 - configurable save formats
 - Python bridge for Discord bots
-- GitHub Actions zip packaging
+- preset-based Discord formatting helpers
+- automation command previews for run and health workflows
+- GitHub Actions zip packaging and checksum output
 
 Start here:
 
