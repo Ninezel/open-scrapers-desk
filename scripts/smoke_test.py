@@ -8,7 +8,10 @@ sys.path.insert(0, "src")
 
 from PyQt6.QtWidgets import QApplication
 
-from open_scrapers_desk.discord_bridge import payload_to_discord_messages
+from open_scrapers_desk.discord_bridge import (
+  payload_to_discord_messages,
+  run_prompt_to_preset_messages,
+)
 from open_scrapers_desk.models import ResultPayload, ResultRecord
 from open_scrapers_desk.settings import SettingsStore
 from open_scrapers_desk.ui.main_window import MainWindow
@@ -33,6 +36,7 @@ def main() -> None:
     )
   )
   print(len(messages))
+  print(callable(run_prompt_to_preset_messages))
 
   app = QApplication([])
   window = MainWindow(SettingsStore())

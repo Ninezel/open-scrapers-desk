@@ -7,6 +7,7 @@ Repository split:
 - Backend repo: `https://github.com/Ninezel/open-scrapers-toolkit`
 - Desktop repo: `https://github.com/Ninezel/open-scrapers-desk`
 - The desktop repo now also exposes a lightweight Python bridge for Discord bots that want to run toolkit scrapers and turn the results into Discord-ready payloads.
+- The Python bridge now also supports prompt-driven Discord flows, so Python bots can ask the toolkit for weather, research, reports, and news without hard-coding scraper IDs.
 
 ## What the desktop app does
 
@@ -81,9 +82,20 @@ Preset-based bridge helper:
 from open_scrapers_desk.discord_bridge import run_scraper_to_preset_messages
 ```
 
+Prompt-driven bridge helpers:
+
+```python
+from open_scrapers_desk.discord_bridge import (
+  resolve_prompt,
+  run_prompt_to_discord_messages,
+  run_prompt_to_preset_messages,
+)
+```
+
 Starter example:
 
 - `examples/discord-bots/discord-py-message-command.py`
+- `examples/discord-bots/discord-prompt-command.py`
 - `examples/discord-bots/discord-preset-command.py`
 - `examples/automation/scheduled-discord-webhook.py`
 
@@ -157,6 +169,7 @@ Current next-step priorities for the desktop repo are:
 
 - recurring job execution instead of command previews alone
 - richer publish flows around Discord and generic webhooks
+- keep the Python bridge aligned with the toolkit prompt-routing and slash-command workflow
 - more polished installer and signing workflows
 - more onboarding, troubleshooting, and accessibility improvements
 

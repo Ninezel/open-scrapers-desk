@@ -33,9 +33,9 @@ Use `.env.example` as a reference if you want to:
 - `OPEN_SCRAPERS_DISCORD_WEBHOOK_URL`
   Discord webhook target for the scheduled webhook example.
 - `DISCORD_PREFIX`
-  Prefix used by the sample `discord.py` message-command example.
+  Prefix used by the sample `discord.py` message-command and prompt-command examples.
 - `DISCORD_TOKEN`
-  Bot token used by the sample `discord.py` example.
+  Bot token used by the sample `discord.py` examples.
 
 ## Testing and headless runs
 

@@ -153,6 +153,35 @@ def build_run_command(
   return program, args, str(working_dir)
 
 
+def build_prompt_command(
+  toolkit_path: str,
+  node_executable: str,
+  prompt: str,
+  limit: int,
+  output_path: str = "",
+  params: dict[str, str] | None = None,
+  save_format: str = "json",
+  *,
+  resolve_only: bool = False,
+) -> tuple[str, list[str], str]:
+  program, base_args, working_dir, _ = _cli_invocation(
+    Path(toolkit_path),
+    node_executable,
+    prefer_source=True,
+  )
+  args = [*base_args, "ask", prompt]
+  if resolve_only:
+    args.append("--resolve-only")
+  else:
+    args.extend(["--limit", str(limit), "--output", output_path])
+    if save_format and save_format != "json":
+      args.extend(["--save-format", save_format])
+  for key, value in (params or {}).items():
+    if value.strip():
+      args.extend(["--param", f"{key}={value}"])
+  return program, args, str(working_dir)
+
+
 def build_run_all_command(
   toolkit_path: str,
   node_executable: str,

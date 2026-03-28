@@ -11,6 +11,7 @@ Current highlights:
 - compare view for two saved payloads
 - configurable save formats
 - Python bridge for Discord bots
+- prompt-driven Python bridge helpers
 - preset-based Discord formatting helpers
 - automation command previews for run and health workflows
 - GitHub Actions zip packaging and checksum output

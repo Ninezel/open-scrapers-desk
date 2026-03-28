@@ -45,7 +45,8 @@ You also need:
 3. Call `payload_to_discord_messages()` if you want to format an existing payload.
 4. Call `run_scraper_to_discord_messages()` if you want one function to both scrape and format.
 5. Call `run_scraper_to_preset_messages()` if you want a quick compact, rich, or alert-style format.
-6. Send the resulting payload dictionaries through your Discord library.
+6. Call `resolve_prompt()`, `run_prompt_payload()`, or `run_prompt_to_preset_messages()` if you want a natural-language `/scraper` style workflow from Python.
+7. Send the resulting payload dictionaries through your Discord library.
 
 ## Function guide
 
@@ -103,6 +104,43 @@ messages = run_scraper_to_preset_messages(
 )
 ```
 
+### `resolve_prompt()`
+
+Use this when you want to inspect how the toolkit would route a natural-language request:
+
+```python
+from open_scrapers_desk.discord_bridge import resolve_prompt
+
+resolution = resolve_prompt(
+  r"g:\Scrapers",
+  "node",
+  "Give me academic records of Vatican Church",
+)
+```
+
+### `run_prompt_to_discord_messages()`
+
+Use this when you want a Python bot command such as `!scrape What is the weather in London`:
+
+```python
+from open_scrapers_desk.discord_bridge import run_prompt_to_discord_messages
+
+messages = run_prompt_to_discord_messages(
+  r"g:\Scrapers",
+  "node",
+  "What is the weather in London",
+  limit=3,
+)
+```
+
+### `run_prompt_to_preset_messages()`
+
+Use this when you want the prompt flow plus a built-in preset:
+
+```python
+from open_scrapers_desk.discord_bridge import run_prompt_to_preset_messages
+```
+
 ## Returned payload shape
 
 Each returned item is a plain dictionary shaped like:
@@ -129,6 +167,7 @@ This keeps the bridge flexible across Discord libraries.
 Starter example:
 
 - `examples/discord-bots/discord-py-message-command.py`
+- `examples/discord-bots/discord-prompt-command.py`
 - `examples/discord-bots/discord-preset-command.py`
 
 ## Presets
@@ -145,6 +184,13 @@ The basic flow is:
 
 1. receive a command such as `!scrape bbc-world-news`
 2. call `run_scraper_to_discord_messages()`
+3. turn each embed dictionary into a Discord embed object
+4. reply with the returned content and embeds
+
+Or for prompt-driven flows:
+
+1. receive a command such as `!scrape What is the weather in London`
+2. call `run_prompt_to_preset_messages()`
 3. turn each embed dictionary into a Discord embed object
 4. reply with the returned content and embeds
 

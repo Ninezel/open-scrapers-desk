@@ -6,6 +6,25 @@ All notable changes to Open Scrapers Desk are documented in this file.
 
 - No unreleased changes recorded yet.
 
+## 2026-03-28 14:53:48 +00:00
+
+### Prompt Bridge Alignment Workflow
+
+- Aligned the Python Discord bridge with the toolkit's new prompt-routing workflow so Python bots can use natural-language scraper requests as well as direct scraper IDs.
+
+### Added
+
+- Added `build_prompt_command()` to the desktop backend bridge helpers.
+- Added `resolve_prompt()`, `run_prompt_payload()`, `run_prompt_to_discord_messages()`, and `run_prompt_to_preset_messages()` to `src/open_scrapers_desk/discord_bridge.py`.
+- Added `examples/discord-bots/discord-prompt-command.py`.
+
+### Changed
+
+- Updated `src/open_scrapers_desk/__init__.py` exports to expose the new prompt-driven bridge helpers.
+- Updated the smoke test so the new bridge surface is included in the import-level validation pass.
+- Updated README, Discord bridge docs, roadmap docs, and wiki pages to reflect the prompt-driven Python bot workflow.
+- Updated `.env.example`, the environment docs, and the wiki environment page so the desktop-side env reference now includes the headless `QT_QPA_PLATFORM` setting used in smoke-test and CI-style runs.
+
 ## 2026-03-28 11:25:15 +00:00
 
 ### Environment And Documentation Workflow

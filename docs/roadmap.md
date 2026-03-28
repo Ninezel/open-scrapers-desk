@@ -8,6 +8,7 @@ Open Scrapers Desk is meant to stay useful both as a desktop application and as 
 - added saved workspaces and queued job execution
 - added source-health snapshots from the toolkit
 - added the Python Discord bridge for bot integrations
+- added prompt-driven Python bridge helpers aligned with the toolkit prompt router
 - added packaging and release automation for Windows builds
 - added dashboard-style summary cards and payload comparison views
 - added automation command previews and alert webhook settings
@@ -21,6 +22,7 @@ Open Scrapers Desk is meant to stay useful both as a desktop application and as 
 - Python bridge preset formatting examples
 - packaging output that now includes both a zip bundle and SHA256 manifest
 - onboarding and troubleshooting improvements
+- prompt-driven Python bridge helpers and a prompt-command example
 
 ## Next roadmap priorities after this expansion
 
@@ -41,7 +43,7 @@ Open Scrapers Desk is meant to stay useful both as a desktop application and as 
 - deepen the Python bridge examples even further
 - add scheduled Discord posting recipes
 - add channel-ready formatting presets
-- keep the bridge aligned with new toolkit library features
+- keep the bridge aligned with new toolkit library features and prompt-routing updates
 
 ## 4. Packaging and release polish
 
