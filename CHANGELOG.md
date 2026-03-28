@@ -6,6 +6,23 @@ All notable changes to Open Scrapers Desk are documented in this file.
 
 - No unreleased changes recorded yet.
 
+## 2026-03-28 11:25:15 +00:00
+
+### Environment And Documentation Workflow
+
+- Audited the desktop repo environment surface, added a reference `.env.example`, and refreshed the repo docs and wiki so GUI overrides, bridge example variables, and `.env` expectations are clearly documented.
+
+### Added
+
+- Added `.env.example` to document the desktop repo's common environment overrides and example variables.
+- Added a dedicated environment-variable reference in `docs/environment-variables.md`.
+- Added a matching wiki page in `docs/wiki/Environment-Variables.md`.
+
+### Changed
+
+- Clarified that the desktop app and Python examples read normal process environment variables and do not auto-load `.env` files by themselves.
+- Refreshed installation, toolkit-connection, Discord bridge, and troubleshooting docs in both the repo docs and wiki source.
+
 ## 2026-03-28 11:16:34 +00:00
 
 ### Roadmap Expansion Workflow

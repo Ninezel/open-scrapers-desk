@@ -23,6 +23,8 @@ If you want direct Node usage instead, use the toolkit repo's own TypeScript lib
 pip install git+https://github.com/Ninezel/open-scrapers-desk.git
 ```
 
+The bridge examples read normal process environment variables. This repo does not auto-load `.env` files by default.
+
 ## Prepare the toolkit
 
 ```bash
@@ -161,6 +163,15 @@ See:
 - `examples/automation/scheduled-discord-webhook.py`
 
 This example shows a Python-side scheduled workflow that runs a scraper through the bridge, formats the result with a preset, and posts the messages to a Discord webhook using only the standard library.
+
+Useful example variables:
+
+- `OPEN_SCRAPERS_TOOLKIT_PATH`
+- `OPEN_SCRAPERS_NODE`
+- `OPEN_SCRAPERS_SCRAPER_ID`
+- `OPEN_SCRAPERS_DISCORD_WEBHOOK_URL`
+- `DISCORD_PREFIX`
+- `DISCORD_TOKEN`
 
 ## Related docs
 

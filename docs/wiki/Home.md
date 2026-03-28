@@ -18,6 +18,7 @@ Current highlights:
 Start here:
 
 - [Installation](Installation)
+- [Environment Variables](Environment-Variables)
 - [Using The Desktop App](Using-the-Desktop-App)
 - [Discord Bot Bridge](Discord-Bot-Bridge)
 - [Roadmap](Roadmap)

@@ -11,6 +11,11 @@ Recommended workflow:
 5. Set `Toolkit path`, `Node executable`, and `Output directory`
 6. Refresh backend status and source health
 
+Useful environment overrides when launching the app or examples:
+
+- `OPEN_SCRAPERS_TOOLKIT_PATH`
+- `OPEN_SCRAPERS_NODE`
+
 The app uses the toolkit CLI for:
 
 - catalog loading

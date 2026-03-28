@@ -3,6 +3,7 @@
 Basics
 
 - [Installation](Installation)
+- [Environment Variables](Environment-Variables)
 - [Connecting To The Toolkit](Connecting-to-the-Toolkit)
 - [Discord Bot Bridge](Discord-Bot-Bridge)
 - [Using The Desktop App](Using-the-Desktop-App)

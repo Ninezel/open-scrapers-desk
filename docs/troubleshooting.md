@@ -43,3 +43,7 @@ Check:
 - `node` works in a regular terminal
 - the scraper ID exists in the toolkit catalog
 - any required scraper parameters were supplied
+
+## `.env` values do not seem to load
+
+That is expected unless you load them yourself. The desktop app and example scripts read normal process environment variables, but they do not auto-load `.env` files on their own.

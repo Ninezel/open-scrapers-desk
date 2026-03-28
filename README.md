@@ -104,6 +104,21 @@ Then in the desktop app set:
 - `Output directory`
 - `Default save format`
 
+## Environment variables and examples
+
+This repo does not auto-load `.env` files by default. `.env.example` is included as a reference for shells, CI jobs, IDE launchers, or your own dotenv setup.
+
+Common variables:
+
+- `OPEN_SCRAPERS_TOOLKIT_PATH`
+- `OPEN_SCRAPERS_NODE`
+- `OPEN_SCRAPERS_KOFI_URL`
+- `OPEN_SCRAPERS_SCRAPER_ID`
+- `OPEN_SCRAPERS_DISCORD_WEBHOOK_URL`
+- `OPEN_SCRAPERS_SKIP_ONBOARDING`
+- `DISCORD_PREFIX`
+- `DISCORD_TOKEN`
+
 ## Packaging the Windows executable
 
 ```bash
@@ -125,6 +140,7 @@ The GitHub Actions workflow also creates a zipped artifact:
 ## Documentation
 
 - [Desktop setup](docs/setup.md)
+- [Environment variables](docs/environment-variables.md)
 - [Architecture](docs/architecture.md)
 - [Toolkit connection guide](docs/toolkit-connection.md)
 - [Discord bot bridge](docs/discord-bots.md)

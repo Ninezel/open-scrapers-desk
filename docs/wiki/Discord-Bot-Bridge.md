@@ -8,6 +8,8 @@ Open Scrapers Desk includes a lightweight Python bridge that lets Discord bots r
 pip install git+https://github.com/Ninezel/open-scrapers-desk.git
 ```
 
+The bridge examples read normal process environment variables. They do not auto-load `.env` files on their own.
+
 ## Toolkit requirement
 
 The bridge still needs:
@@ -49,6 +51,15 @@ Starter file:
 - `examples/discord-bots/discord-py-message-command.py`
 - `examples/discord-bots/discord-preset-command.py`
 - `examples/automation/scheduled-discord-webhook.py`
+
+Useful example variables:
+
+- `OPEN_SCRAPERS_TOOLKIT_PATH`
+- `OPEN_SCRAPERS_NODE`
+- `OPEN_SCRAPERS_SCRAPER_ID`
+- `OPEN_SCRAPERS_DISCORD_WEBHOOK_URL`
+- `DISCORD_PREFIX`
+- `DISCORD_TOKEN`
 
 Related pages:
 

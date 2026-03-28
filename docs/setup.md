@@ -36,6 +36,8 @@ set PYTHONPATH=src
 python src/open_scrapers_desk/app.py
 ```
 
+The desktop app does not auto-load `.env` files by default. Use `.env.example` as a reference if you want to feed variables in through your shell, IDE, or your own dotenv tool.
+
 ## First-run checklist
 
 1. Set the toolkit path.
@@ -58,6 +60,13 @@ pip install git+https://github.com/Ninezel/open-scrapers-desk.git
 ```
 
 Then see `docs/discord-bots.md` for the bridge workflow.
+
+Common environment overrides:
+
+- `OPEN_SCRAPERS_TOOLKIT_PATH`
+- `OPEN_SCRAPERS_NODE`
+- `OPEN_SCRAPERS_KOFI_URL`
+- `OPEN_SCRAPERS_SKIP_ONBOARDING`
 
 ## Recommended usage paths
 
