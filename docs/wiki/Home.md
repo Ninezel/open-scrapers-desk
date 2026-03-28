@@ -9,4 +9,5 @@ Current highlights:
 - source-health snapshot
 - library and payload summaries
 - configurable save formats
+- Python bridge for Discord bots
 - GitHub Actions zip packaging

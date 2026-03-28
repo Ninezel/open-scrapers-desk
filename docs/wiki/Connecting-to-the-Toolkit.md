@@ -10,3 +10,5 @@ npm run build
 ```
 
 Then point the desktop app at that folder and refresh the backend status.
+
+The Python Discord bridge in this repo uses the same toolkit checkout and Node runtime, so the same preparation steps apply when you are building a bot instead of launching the GUI.

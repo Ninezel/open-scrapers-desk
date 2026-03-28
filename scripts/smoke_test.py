@@ -8,11 +8,32 @@ sys.path.insert(0, "src")
 
 from PyQt6.QtWidgets import QApplication
 
+from open_scrapers_desk.discord_bridge import payload_to_discord_messages
+from open_scrapers_desk.models import ResultPayload, ResultRecord
 from open_scrapers_desk.settings import SettingsStore
 from open_scrapers_desk.ui.main_window import MainWindow
 
 
 def main() -> None:
+  messages = payload_to_discord_messages(
+    ResultPayload(
+      scraper_id="smoke-test",
+      scraper_name="Smoke Test",
+      category="reports",
+      source="Open Scrapers",
+      fetched_at="2026-03-28T14:00:00.000Z",
+      records=[
+        ResultRecord(
+          id="record-1",
+          title="Smoke test record",
+          source="Open Scrapers",
+          summary="Smoke test summary",
+        )
+      ],
+    )
+  )
+  print(len(messages))
+
   app = QApplication([])
   window = MainWindow(SettingsStore())
   print(window.windowTitle())

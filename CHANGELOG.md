@@ -12,6 +12,10 @@ All notable changes to Open Scrapers Desk are documented in this file.
 
 - Completed a desktop app expansion pass so the GUI now matches the richer toolkit feature set and ships with updated docs and wiki content.
 
+### Discord Bot Bridge Workflow
+
+- Extended the desktop repository so Python Discord bots can reuse the toolkit through a lightweight bridge layer instead of implementing their own subprocess wrapper.
+
 ### Added
 
 - Added saved workspace support for keeping multiple toolkit/output setups.
@@ -20,12 +24,17 @@ All notable changes to Open Scrapers Desk are documented in this file.
 - Added richer library and payload summary views in the results browser.
 - Added default save format handling so the desktop app can drive JSON, CSV, NDJSON, or all exports.
 - Added zipped Windows build artifact publishing in GitHub Actions.
+- Added `src/open_scrapers_desk/discord_bridge.py` for Python bot integrations.
+- Added packaging metadata in `pyproject.toml` so the bridge can be installed from GitHub.
+- Added Discord bot bridge documentation and a starter `discord.py` example.
 
 ### Changed
 
 - Updated the main window to surface health, workspaces, queued jobs, and better run controls.
 - Updated desktop docs and wiki pages to match the new workflow.
+- Updated the smoke test to cover the new bridge module.
 
 ### Maintenance
 
 - Refreshed the packaging and publishing documentation to keep the release process aligned with the toolkit repo.
+- Aligned the Python package metadata with the current `0.2.0` release line.

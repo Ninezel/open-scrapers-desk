@@ -6,6 +6,7 @@ Repository split:
 
 - Backend repo: `https://github.com/Ninezel/open-scrapers-toolkit`
 - Desktop repo: `https://github.com/Ninezel/open-scrapers-desk`
+- The desktop repo now also exposes a lightweight Python bridge for Discord bots that want to run toolkit scrapers and turn the results into Discord-ready payloads.
 
 ## What the desktop app does
 
@@ -17,6 +18,7 @@ Repository split:
 - scans result folders automatically
 - displays summary views for the whole library and individual result payloads
 - stores saved workspaces for different toolkit/output combinations
+- exposes Python helper functions for Discord bots and automation scripts
 - includes a configurable Ko-fi support button
 
 Default support link:
@@ -47,6 +49,31 @@ If the module launch form does not work in your shell, this also works:
 set PYTHONPATH=src
 python src/open_scrapers_desk/app.py
 ```
+
+## Use it as a Python bridge for Discord bots
+
+Install from GitHub:
+
+```bash
+pip install git+https://github.com/Ninezel/open-scrapers-desk.git
+```
+
+Then use the bridge with a local `open-scrapers-toolkit` checkout:
+
+```python
+from open_scrapers_desk.discord_bridge import run_scraper_to_discord_messages
+
+messages = run_scraper_to_discord_messages(
+  r"g:\Scrapers",
+  "node",
+  "bbc-world-news",
+  limit=3,
+)
+```
+
+Starter example:
+
+- `examples/discord-bots/discord-py-message-command.py`
 
 ## Toolkit setup
 
@@ -83,6 +110,7 @@ The GitHub Actions workflow also creates a zipped artifact:
 - [Desktop setup](docs/setup.md)
 - [Architecture](docs/architecture.md)
 - [Toolkit connection guide](docs/toolkit-connection.md)
+- [Discord bot bridge](docs/discord-bots.md)
 - [Packaging and release guide](docs/packaging.md)
 - [Publishing checklist](docs/publishing.md)
 - [Release workflow](docs/release-workflow.md)

@@ -5,6 +5,7 @@ Important modules:
 - `src/open_scrapers_desk/app.py`: app entry point
 - `src/open_scrapers_desk/ui/main_window.py`: main window and user workflows
 - `src/open_scrapers_desk/backend.py`: CLI integration with the toolkit repo
+- `src/open_scrapers_desk/discord_bridge.py`: Python bot helpers that run toolkit scrapers and format Discord payloads
 - `src/open_scrapers_desk/results.py`: result scanning, loading, filtering, and summaries
 - `src/open_scrapers_desk/settings.py`: persistent settings and workspace storage
 - `src/open_scrapers_desk/models.py`: shared dataclasses
@@ -17,3 +18,5 @@ Important modules:
 4. It builds CLI commands for run and batch actions.
 5. It queues jobs and executes them sequentially through `QProcess`.
 6. It scans saved outputs and renders both record-level and library-level summaries.
+
+The Discord bridge reuses the same backend command building so Python bot automations and the desktop app stay consistent.
