@@ -1,6 +1,6 @@
 # Discord Bot Bridge
 
-Open Scrapers Desk includes a lightweight Python bridge that lets Discord bots run the toolkit scrapers and format the results into Discord-style payload objects.
+Open Scrapers Desk includes a lightweight Python bridge that lets Discord bots run toolkit scrapers and format the results into Discord-style payload objects.
 
 ## Install
 
@@ -10,7 +10,17 @@ pip install git+https://github.com/Ninezel/open-scrapers-desk.git
 
 ## Toolkit requirement
 
-The bridge still needs a local `open-scrapers-toolkit` checkout and a working `node` runtime.
+The bridge still needs:
+
+- a local `open-scrapers-toolkit` checkout
+- a working `node` runtime
+- the toolkit installed and built
+
+## Main helpers
+
+- `run_scraper_payload()`
+- `payload_to_discord_messages()`
+- `run_scraper_to_discord_messages()`
 
 ## Example
 
@@ -30,3 +40,8 @@ Returned payloads are plain dictionaries so they can be adapted to `discord.py` 
 Starter file:
 
 - `examples/discord-bots/discord-py-message-command.py`
+
+Related pages:
+
+- [Connecting To The Toolkit](Connecting-to-the-Toolkit)
+- [Roadmap](Roadmap)

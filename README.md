@@ -111,10 +111,22 @@ The GitHub Actions workflow also creates a zipped artifact:
 - [Architecture](docs/architecture.md)
 - [Toolkit connection guide](docs/toolkit-connection.md)
 - [Discord bot bridge](docs/discord-bots.md)
+- [Roadmap](docs/roadmap.md)
 - [Packaging and release guide](docs/packaging.md)
 - [Publishing checklist](docs/publishing.md)
 - [Release workflow](docs/release-workflow.md)
 - [Wiki source pages](docs/wiki/Home.md)
+
+## Next roadmap focus
+
+Current next-step priorities for the desktop repo are:
+
+- richer result presentation with charts, dashboards, and better comparison views
+- more automation around scheduled runs, notifications, and publishing
+- stronger Discord and webhook publishing workflows around the shared toolkit data
+- smoother packaging through installer polish, signing, and release automation
+
+The fuller planning notes live in [docs/roadmap.md](docs/roadmap.md).
 
 ## License
 

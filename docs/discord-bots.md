@@ -1,6 +1,21 @@
 # Discord Bot Bridge
 
-Open Scrapers Desk now includes a lightweight Python bridge for Discord bots that want to reuse the toolkit scrapers without building their own CLI wrapper.
+Open Scrapers Desk includes a lightweight Python bridge for Discord bots that want to reuse the toolkit scrapers without writing their own subprocess wrapper.
+
+## What this bridge is for
+
+Use this repo when you want Python-side integrations such as:
+
+- `discord.py`, `py-cord`, `nextcord`, or similar bots
+- scheduled posting scripts
+- moderation or announcement bots that pull public data on demand
+- internal Python automation that wants the toolkit outputs without reimplementing the CLI orchestration
+
+## What this bridge is not
+
+The bridge does not replace the toolkit itself. It depends on a local `open-scrapers-toolkit` checkout and uses the toolkit CLI under the hood.
+
+If you want direct Node usage instead, use the toolkit repo's own TypeScript library exports.
 
 ## Install
 
@@ -8,16 +23,56 @@ Open Scrapers Desk now includes a lightweight Python bridge for Discord bots tha
 pip install git+https://github.com/Ninezel/open-scrapers-desk.git
 ```
 
-This installs the Python package layer. Your bot still needs a local checkout of `open-scrapers-toolkit` because the bridge runs the toolkit CLI underneath.
+## Prepare the toolkit
 
-## Basic flow
+```bash
+cd g:\Scrapers
+npm install
+npm run build
+```
 
-1. Keep a local copy of `open-scrapers-toolkit`
-2. Make sure `node` and the toolkit are available
-3. Call `run_scraper_payload()` or `run_scraper_to_discord_messages()`
-4. Send the returned payloads with `discord.py`, `py-cord`, `nextcord`, or a compatible library
+You also need:
 
-## Example
+- a working `node` executable
+- a local path to the toolkit checkout
+
+## Typical bridge flow
+
+1. Keep a local toolkit checkout ready.
+2. Call `run_scraper_payload()` if you want the normalized result object in Python.
+3. Call `payload_to_discord_messages()` if you want to format an existing payload.
+4. Call `run_scraper_to_discord_messages()` if you want one function to both scrape and format.
+5. Send the resulting payload dictionaries through your Discord library.
+
+## Function guide
+
+### `run_scraper_payload()`
+
+Use this when you want the raw normalized payload:
+
+```python
+from open_scrapers_desk.discord_bridge import run_scraper_payload
+
+payload = run_scraper_payload(
+  r"g:\Scrapers",
+  "node",
+  "world-bank-gdp",
+  limit=1,
+  params={"country": "GBR"},
+)
+```
+
+### `payload_to_discord_messages()`
+
+Use this when you already have a payload and only want Discord formatting:
+
+```python
+from open_scrapers_desk.discord_bridge import payload_to_discord_messages
+```
+
+### `run_scraper_to_discord_messages()`
+
+Use this for the common bot-command path:
 
 ```python
 from open_scrapers_desk.discord_bridge import run_scraper_to_discord_messages
@@ -30,7 +85,9 @@ messages = run_scraper_to_discord_messages(
 )
 ```
 
-Each returned item looks like a Discord-style payload:
+## Returned payload shape
+
+Each returned item is a plain dictionary shaped like:
 
 ```python
 {
@@ -47,19 +104,31 @@ Each returned item looks like a Discord-style payload:
 }
 ```
 
-## Available helpers
+This keeps the bridge flexible across Discord libraries.
 
-- `run_scraper_payload()`
-- `record_to_discord_embed()`
-- `payload_to_discord_messages()`
-- `run_scraper_to_discord_messages()`
+## Full command example
 
-## Starter example
+Starter example:
 
 - `examples/discord-bots/discord-py-message-command.py`
 
-## Notes
+The basic flow is:
+
+1. receive a command such as `!scrape bbc-world-news`
+2. call `run_scraper_to_discord_messages()`
+3. turn each embed dictionary into a Discord embed object
+4. reply with the returned content and embeds
+
+## Good usage practices
 
 - Keep result limits low for chat commands.
-- The bridge depends on a working toolkit checkout, not just the desktop app itself.
-- The bridge intentionally returns plain dictionaries so it stays flexible across Discord libraries.
+- Avoid exposing every scraper to every channel by default.
+- Validate user-supplied scraper IDs or maintain an allowlist.
+- Keep the toolkit built and ready so bot commands stay fast.
+- Remember that source-health and result availability depend on the upstream public endpoints.
+
+## Related docs
+
+- `docs/setup.md`
+- `docs/toolkit-connection.md`
+- `docs/roadmap.md`

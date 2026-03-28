@@ -14,3 +14,9 @@ Bridge-only install for Python bot projects:
 ```bash
 pip install git+https://github.com/Ninezel/open-scrapers-desk.git
 ```
+
+Recommended next pages:
+
+- [Connecting To The Toolkit](Connecting-to-the-Toolkit)
+- [Discord Bot Bridge](Discord-Bot-Bridge)
+- [Roadmap](Roadmap)

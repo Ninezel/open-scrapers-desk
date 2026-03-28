@@ -17,6 +17,12 @@ python -m compileall src
 python scripts/smoke_test.py
 ```
 
+If you only want the Python bridge for bots and automation, you can install from GitHub instead:
+
+```bash
+pip install git+https://github.com/Ninezel/open-scrapers-desk.git
+```
+
 ## Launch
 
 ```bash
@@ -50,3 +56,18 @@ pip install git+https://github.com/Ninezel/open-scrapers-desk.git
 ```
 
 Then see `docs/discord-bots.md` for the bridge workflow.
+
+## Recommended usage paths
+
+Use the desktop GUI when you want:
+
+- a visual workspace for running scrapers
+- saved workspaces and output browsing
+- source-health review without writing code
+
+Use the Python bridge when you want:
+
+- a Discord bot command
+- a scheduled script
+- a small internal automation service
+- Python-side control over when and how scraper results are published

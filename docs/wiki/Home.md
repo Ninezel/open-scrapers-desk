@@ -11,3 +11,10 @@ Current highlights:
 - configurable save formats
 - Python bridge for Discord bots
 - GitHub Actions zip packaging
+
+Start here:
+
+- [Installation](Installation)
+- [Using The Desktop App](Using-the-Desktop-App)
+- [Discord Bot Bridge](Discord-Bot-Bridge)
+- [Roadmap](Roadmap)
