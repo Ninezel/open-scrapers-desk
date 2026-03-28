@@ -1,34 +1,14 @@
 # Publishing Checklist
 
-Use this when turning the repo into a public GitHub project.
+1. Run `python -m compileall src`
+2. Run `python scripts/smoke_test.py`
+3. Build the executable with `python scripts/build_exe.py`
+4. Confirm the app opens and the toolkit connection still works
+5. Update `CHANGELOG.md` with the current date
+6. Update README and wiki source pages when features change
+7. Commit with a detailed message
+8. Push the main repo
+9. Sync the live wiki from `docs/wiki`
+10. Publish the GitHub Actions build artifacts or a tagged release
 
-## Repository checklist
-
-- README is up to date
-- license is present
-- contribution docs exist
-- security policy exists
-- issue templates exist
-- workflow builds successfully
-
-## Release checklist
-
-- smoke test passes
-- PyInstaller build succeeds
-- toolkit connection tested against a real backend checkout
-- screenshots or release notes prepared
-- wiki pages published
-
-## Suggested GitHub configuration
-
-- public repository
-- wiki enabled
-- discussions optional
-- releases enabled
-- actions enabled
-
-## Suggested first release assets
-
-- zipped PyInstaller bundle
-- installer if Inno Setup is used
-- short quick-start PDF or link to wiki Home
+When the app changes how it calls the toolkit CLI, make sure the toolkit docs are updated in parallel.

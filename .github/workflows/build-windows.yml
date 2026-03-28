@@ -32,8 +32,19 @@ jobs:
       - name: Build executable
         run: python scripts/build_exe.py
 
+      - name: Create release zip
+        run: |
+          New-Item -ItemType Directory -Force -Path release | Out-Null
+          Compress-Archive -Path dist/OpenScrapersDesk/* -DestinationPath release/OpenScrapersDesk-windows.zip -Force
+
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: OpenScrapersDesk-windows
           path: dist/OpenScrapersDesk
+
+      - name: Upload zip artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: OpenScrapersDesk-windows-zip
+          path: release/OpenScrapersDesk-windows.zip

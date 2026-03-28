@@ -4,7 +4,7 @@ import json
 import os
 from pathlib import Path
 
-from .models import AppSettings
+from .models import AppSettings, WorkspaceProfile
 
 
 COMMON_TOOLKIT_NAMES = [
@@ -114,8 +114,21 @@ class SettingsStore:
       node_executable=raw.get("node_executable", "node"),
       output_dir=output_dir,
       kofi_url=resolve_kofi_url(raw.get("kofi_url", "") or default_kofi_url()),
+      save_format=raw.get("save_format", "json"),
       last_scraper_id=raw.get("last_scraper_id", ""),
       last_category=raw.get("last_category", "all"),
+      active_workspace=raw.get("active_workspace", ""),
+      workspaces=[
+        WorkspaceProfile(
+          name=item.get("name", ""),
+          toolkit_path=item.get("toolkit_path", ""),
+          node_executable=item.get("node_executable", "node"),
+          output_dir=item.get("output_dir", ""),
+          save_format=item.get("save_format", "json"),
+        )
+        for item in raw.get("workspaces", [])
+        if item.get("name")
+      ],
     )
 
   def save(self, settings: AppSettings) -> None:
@@ -124,7 +137,19 @@ class SettingsStore:
       "node_executable": settings.node_executable,
       "output_dir": settings.output_dir,
       "kofi_url": resolve_kofi_url(settings.kofi_url),
+      "save_format": settings.save_format,
       "last_scraper_id": settings.last_scraper_id,
       "last_category": settings.last_category,
+      "active_workspace": settings.active_workspace,
+      "workspaces": [
+        {
+          "name": workspace.name,
+          "toolkit_path": workspace.toolkit_path,
+          "node_executable": workspace.node_executable,
+          "output_dir": workspace.output_dir,
+          "save_format": workspace.save_format,
+        }
+        for workspace in settings.workspaces
+      ],
     }
     self._path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")

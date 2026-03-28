@@ -10,6 +10,7 @@ class ScraperParameter:
   key: str
   description: str
   example: str = ""
+  required: bool = False
 
 
 @dataclass(slots=True)
@@ -19,6 +20,7 @@ class ScraperSummary:
   name: str
   description: str
   homepage: str
+  source_name: str = ""
   params: list[ScraperParameter] = field(default_factory=list)
 
 
@@ -37,8 +39,32 @@ class AppSettings:
   node_executable: str = "node"
   output_dir: str = ""
   kofi_url: str = ""
+  save_format: str = "json"
   last_scraper_id: str = ""
   last_category: str = "all"
+  active_workspace: str = ""
+  workspaces: list["WorkspaceProfile"] = field(default_factory=list)
+
+
+@dataclass(slots=True)
+class WorkspaceProfile:
+  name: str
+  toolkit_path: str
+  node_executable: str
+  output_dir: str
+  save_format: str = "json"
+
+
+@dataclass(slots=True)
+class SourceHealthRecord:
+  scraper_id: str
+  title: str
+  category: str
+  source: str
+  status: str
+  duration_ms: str = ""
+  records: str = ""
+  summary: str = ""
 
 
 @dataclass(slots=True)

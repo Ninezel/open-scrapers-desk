@@ -1,23 +1,22 @@
 # Open Scrapers Desk
 
-Open Scrapers Desk is a PyQt desktop application for people who want to use the Open Scrapers ecosystem without living in a terminal. It connects to the separate scraper backend repository, lets users run scraper jobs from a GUI, and presents saved JSON results in a readable workspace.
+Open Scrapers Desk is a PyQt desktop application for people who want to use the Open Scrapers ecosystem without living in a terminal. It connects to the separate scraper backend repository, lets users queue scraper jobs from a GUI, and presents saved outputs in a readable workspace.
 
-This repository is intentionally separate from the scraper engine:
+Repository split:
 
 - Backend repo: `https://github.com/Ninezel/open-scrapers-toolkit`
 - Desktop repo: `https://github.com/Ninezel/open-scrapers-desk`
-
-That split keeps the scrapers reusable for developers while giving non-programmers a clean app to work with.
 
 ## What the desktop app does
 
 - connects to an Open Scrapers Toolkit checkout
 - validates the Node and toolkit environment
 - loads the scraper catalog from the backend
-- runs a selected scraper, a whole category, or the full catalog
-- scans JSON output folders automatically
-- shows records in a searchable desktop UI
-- displays summaries, metadata, links, tags, and source details
+- queues a selected scraper, a whole category, or the full catalog
+- shows source-health status from the toolkit `health` command
+- scans result folders automatically
+- displays summary views for the whole library and individual result payloads
+- stores saved workspaces for different toolkit/output combinations
 - includes a configurable Ko-fi support button
 
 Default support link:
@@ -26,23 +25,10 @@ Default support link:
 
 ## Desktop features
 
-- **Overview tab**: toolkit path, node path, output folder, health checks, latest files
-- **Overview tab** also stores your Ko-fi link and exposes a quick support button
-- **Run Scrapers tab**: scraper list, parameter inputs, output path selection, live run log
-- **Results Library tab**: output file browser, record table, detail pane, search
+- **Overview tab**: toolkit path, node path, output folder, default save format, saved workspaces, source-health snapshot, latest files
+- **Run Scrapers tab**: scraper list, parameter inputs, output path selection, save format, pending job queue, live run log
+- **Results Library tab**: library summary, output file browser, record table, detail pane, search
 - **Logs & Help tab**: quick start guidance and activity log
-
-## Repository relationship
-
-This app expects the backend toolkit repository to exist separately. The recommended workflow is:
-
-1. Clone `open-scrapers-toolkit`
-2. Run `npm install`
-3. Run `npm run build`
-4. Clone this repository
-5. Start Open Scrapers Desk and point it to the toolkit path
-
-The app will also use `npx tsx src/cli.ts` when available, which makes local development friendlier if the toolkit `dist/` output is stale.
 
 ## Local development
 
@@ -62,15 +48,24 @@ set PYTHONPATH=src
 python src/open_scrapers_desk/app.py
 ```
 
-Optional support-link environment variable:
+## Toolkit setup
+
+The toolkit repo should already be installed and built:
 
 ```bash
-set OPEN_SCRAPERS_KOFI_URL=https://ko-fi.com/yourname
+cd g:\Scrapers
+npm install
+npm run build
 ```
 
-## Packaging the Windows executable
+Then in the desktop app set:
 
-Build the desktop executable with PyInstaller:
+- `Toolkit path`
+- `Node executable`
+- `Output directory`
+- `Default save format`
+
+## Packaging the Windows executable
 
 ```bash
 pip install -r requirements.txt
@@ -79,21 +74,9 @@ python scripts/build_exe.py
 
 This creates a Windows app bundle in `dist/OpenScrapersDesk/`.
 
-If you want a traditional installer, use the included Inno Setup script:
+The GitHub Actions workflow also creates a zipped artifact:
 
-```text
-installer/OpenScrapersDesk.iss
-```
-
-Compile it with Inno Setup after building the PyInstaller output.
-
-## GitHub automation
-
-This repo includes a Windows build workflow:
-
-- [.github/workflows/build-windows.yml](.github/workflows/build-windows.yml)
-
-It can build the app on tag pushes and upload the desktop bundle as a GitHub Actions artifact.
+- `.github/workflows/build-windows.yml`
 
 ## Documentation
 
@@ -102,24 +85,8 @@ It can build the app on tag pushes and upload the desktop bundle as a GitHub Act
 - [Toolkit connection guide](docs/toolkit-connection.md)
 - [Packaging and release guide](docs/packaging.md)
 - [Publishing checklist](docs/publishing.md)
+- [Release workflow](docs/release-workflow.md)
 - [Wiki source pages](docs/wiki/Home.md)
-
-## Why PyQt
-
-PyQt gives the project:
-
-- a native-feeling Windows desktop interface
-- a mature packaging path for `.exe` builds
-- strong layout and table widgets for reading data-heavy outputs
-- a low-friction path for future charts, export tools, and dashboards
-
-## Roadmap
-
-- richer visual summaries and charts
-- background job queueing
-- saved workspaces
-- source health indicators
-- release signing and installer automation
 
 ## License
 

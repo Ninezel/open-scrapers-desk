@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 from pathlib import Path
 
 from PyQt6.QtCore import QProcess, Qt, QUrl
@@ -12,6 +13,7 @@ from PyQt6.QtWidgets import (
   QGridLayout,
   QGroupBox,
   QHBoxLayout,
+  QInputDialog,
   QLabel,
   QLineEdit,
   QListWidget,
@@ -34,12 +36,37 @@ from ..backend import (
   build_run_all_command,
   build_run_command,
   describe_command,
+  fetch_health_summary,
   list_scrapers,
   validate_backend,
 )
-from ..models import AppSettings, ResultFileSummary, ResultPayload, ResultRecord, ScraperSummary
-from ..results import filter_records, format_meta_html, load_result_payload, scan_result_files
+from ..models import (
+  AppSettings,
+  ResultFileSummary,
+  ResultPayload,
+  ResultRecord,
+  ScraperParameter,
+  ScraperSummary,
+  SourceHealthRecord,
+  WorkspaceProfile,
+)
+from ..results import (
+  build_library_summary_html,
+  build_payload_summary_html,
+  filter_records,
+  format_meta_html,
+  load_result_payload,
+  scan_result_files,
+)
 from ..settings import SettingsStore, default_output_dir
+
+
+@dataclass(slots=True)
+class QueuedJob:
+  args: list[str]
+  label: str
+  program: str
+  working_dir: str
 
 
 class MainWindow(QMainWindow):
@@ -49,15 +76,18 @@ class MainWindow(QMainWindow):
     self.settings = settings_store.load()
     self.scrapers: list[ScraperSummary] = []
     self.result_files: list[ResultFileSummary] = []
+    self.health_records: list[SourceHealthRecord] = []
     self.current_payload: ResultPayload | None = None
     self.current_process: QProcess | None = None
     self.current_process_label = ""
+    self.pending_jobs: list[QueuedJob] = []
     self.param_inputs: dict[str, QLineEdit] = {}
 
     self.setWindowTitle("Open Scrapers Desk")
-    self.resize(1480, 920)
+    self.resize(1540, 960)
 
     self._build_ui()
+    self._refresh_workspace_combo()
     self._apply_settings_to_form()
     self.refresh_backend_status()
     self.refresh_catalog()
@@ -72,7 +102,7 @@ class MainWindow(QMainWindow):
     hero_title = QLabel("Open Scrapers Desk")
     hero_title.setObjectName("HeroTitle")
     hero_subtitle = QLabel(
-      "Browse collected datasets, run scraper jobs, and keep the toolkit approachable for non-programmers."
+      "Browse collected datasets, queue scraper jobs, inspect source health, and keep the toolkit approachable for non-programmers."
     )
     hero_subtitle.setObjectName("HeroSubtitle")
     hero_subtitle.setWordWrap(True)
@@ -101,6 +131,24 @@ class MainWindow(QMainWindow):
     layout = QVBoxLayout(page)
     layout.setSpacing(12)
 
+    workspace_group = QGroupBox("Saved Workspaces")
+    workspace_layout = QFormLayout(workspace_group)
+    workspace_row = QHBoxLayout()
+    self.workspace_combo = QComboBox()
+    self.workspace_combo.currentTextChanged.connect(self._on_workspace_changed)
+    save_workspace_button = QPushButton("Save Workspace")
+    save_workspace_button.clicked.connect(self.save_workspace)
+    load_workspace_button = QPushButton("Load Workspace")
+    load_workspace_button.clicked.connect(self.load_selected_workspace)
+    delete_workspace_button = QPushButton("Delete Workspace")
+    delete_workspace_button.clicked.connect(self.delete_selected_workspace)
+    workspace_row.addWidget(self.workspace_combo, 1)
+    workspace_row.addWidget(save_workspace_button)
+    workspace_row.addWidget(load_workspace_button)
+    workspace_row.addWidget(delete_workspace_button)
+    workspace_layout.addRow("Workspace", self._wrap_layout(workspace_row))
+    layout.addWidget(workspace_group)
+
     config_group = QGroupBox("Toolkit Connection")
     config_layout = QFormLayout(config_group)
 
@@ -124,12 +172,16 @@ class MainWindow(QMainWindow):
 
     output_row = QHBoxLayout()
     self.output_dir_edit = QLineEdit()
-    self.output_dir_edit.setPlaceholderText("Where JSON result files should be stored")
+    self.output_dir_edit.setPlaceholderText("Where result files should be stored")
     output_browse = QPushButton("Browse")
     output_browse.clicked.connect(self._browse_output_dir)
     output_row.addWidget(self.output_dir_edit)
     output_row.addWidget(output_browse)
     config_layout.addRow("Output directory", self._wrap_layout(output_row))
+
+    self.default_save_format_combo = QComboBox()
+    self.default_save_format_combo.addItems(["json", "csv", "ndjson", "all"])
+    config_layout.addRow("Default save format", self.default_save_format_combo)
 
     kofi_row = QHBoxLayout()
     self.kofi_url_edit = QLineEdit()
@@ -147,12 +199,15 @@ class MainWindow(QMainWindow):
     save_button.clicked.connect(self.save_settings)
     validate_button = QPushButton("Validate Backend")
     validate_button.clicked.connect(self.refresh_backend_status)
+    health_button = QPushButton("Refresh Source Health")
+    health_button.clicked.connect(self.refresh_health_summary)
     refresh_button = QPushButton("Refresh Everything")
     refresh_button.clicked.connect(self.refresh_everything)
     open_output_button = QPushButton("Open Output Folder")
     open_output_button.clicked.connect(self.open_output_dir)
     button_row.addWidget(save_button)
     button_row.addWidget(validate_button)
+    button_row.addWidget(health_button)
     button_row.addWidget(refresh_button)
     button_row.addWidget(open_output_button)
     config_layout.addRow(button_row)
@@ -169,6 +224,7 @@ class MainWindow(QMainWindow):
     self.cli_mode_value = self._status_value_label()
     self.catalog_count_value = self._status_value_label()
     self.results_count_value = self._status_value_label()
+    self.health_count_value = self._status_value_label()
     self.backend_message_value = QLabel("")
     self.backend_message_value.setWordWrap(True)
 
@@ -178,6 +234,7 @@ class MainWindow(QMainWindow):
       ("CLI mode", self.cli_mode_value),
       ("Catalog", self.catalog_count_value),
       ("Result files", self.results_count_value),
+      ("Health rows", self.health_count_value),
       ("Notes", self.backend_message_value),
     ]
     for row_index, (label_text, widget) in enumerate(rows):
@@ -185,6 +242,17 @@ class MainWindow(QMainWindow):
       status_layout.addWidget(widget, row_index, 1)
 
     layout.addWidget(status_group)
+
+    health_group = QGroupBox("Source Health Snapshot")
+    health_layout = QVBoxLayout(health_group)
+    self.health_table = QTableWidget(0, 4)
+    self.health_table.setHorizontalHeaderLabels(["Source", "Status", "Category", "Notes"])
+    self.health_table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+    self.health_table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+    self.health_table.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
+    self.health_table.verticalHeader().setVisible(False)
+    health_layout.addWidget(self.health_table)
+    layout.addWidget(health_group)
 
     recent_group = QGroupBox("Latest Result Files")
     recent_layout = QVBoxLayout(recent_group)
@@ -230,10 +298,12 @@ class MainWindow(QMainWindow):
     self.scraper_name_label.setObjectName("StatusValue")
     self.scraper_description_label = QLabel("Scraper details will appear here.")
     self.scraper_description_label.setWordWrap(True)
+    self.scraper_source_label = QLabel("")
     self.scraper_homepage_label = QLabel("")
     self.scraper_homepage_label.setOpenExternalLinks(True)
     detail_layout.addWidget(self.scraper_name_label)
     detail_layout.addWidget(self.scraper_description_label)
+    detail_layout.addWidget(self.scraper_source_label)
     detail_layout.addWidget(self.scraper_homepage_label)
 
     self.param_group = QGroupBox("Parameters")
@@ -246,9 +316,13 @@ class MainWindow(QMainWindow):
     self.limit_spin.setValue(10)
     run_layout.addRow("Limit", self.limit_spin)
 
+    self.run_save_format_combo = QComboBox()
+    self.run_save_format_combo.addItems(["json", "csv", "ndjson", "all"])
+    run_layout.addRow("Save format", self.run_save_format_combo)
+
     output_file_row = QHBoxLayout()
     self.output_file_edit = QLineEdit()
-    self.output_file_edit.setPlaceholderText("Output JSON file path")
+    self.output_file_edit.setPlaceholderText("Output base file path")
     output_file_browse = QPushButton("Browse")
     output_file_browse.clicked.connect(self._browse_output_file)
     output_file_row.addWidget(self.output_file_edit)
@@ -258,17 +332,30 @@ class MainWindow(QMainWindow):
     actions_row = QHBoxLayout()
     self.refresh_catalog_button = QPushButton("Refresh Catalog")
     self.refresh_catalog_button.clicked.connect(self.refresh_catalog)
-    self.run_selected_button = QPushButton("Run Selected")
+    self.run_selected_button = QPushButton("Queue Selected")
     self.run_selected_button.clicked.connect(self.run_selected_scraper)
-    self.run_category_button = QPushButton("Run Category")
+    self.run_category_button = QPushButton("Queue Category")
     self.run_category_button.clicked.connect(self.run_selected_category)
-    self.run_all_button = QPushButton("Run All")
+    self.run_all_button = QPushButton("Queue All")
     self.run_all_button.clicked.connect(self.run_all_scrapers)
     actions_row.addWidget(self.refresh_catalog_button)
     actions_row.addWidget(self.run_selected_button)
     actions_row.addWidget(self.run_category_button)
     actions_row.addWidget(self.run_all_button)
     run_layout.addRow(actions_row)
+
+    queue_group = QGroupBox("Pending Job Queue")
+    queue_layout = QVBoxLayout(queue_group)
+    self.queue_list = QListWidget()
+    queue_layout.addWidget(self.queue_list)
+    queue_actions = QHBoxLayout()
+    remove_queue_button = QPushButton("Remove Selected")
+    remove_queue_button.clicked.connect(self.remove_selected_queue_job)
+    clear_queue_button = QPushButton("Clear Queue")
+    clear_queue_button.clicked.connect(self.clear_job_queue)
+    queue_actions.addWidget(remove_queue_button)
+    queue_actions.addWidget(clear_queue_button)
+    queue_layout.addLayout(queue_actions)
 
     log_group = QGroupBox("Run Log")
     log_layout = QVBoxLayout(log_group)
@@ -279,6 +366,7 @@ class MainWindow(QMainWindow):
     right_layout.addWidget(detail_group)
     right_layout.addWidget(self.param_group)
     right_layout.addWidget(run_group)
+    right_layout.addWidget(queue_group)
     right_layout.addWidget(log_group, 1)
     layout.addWidget(right_container, 2)
 
@@ -305,6 +393,13 @@ class MainWindow(QMainWindow):
     top_row.addWidget(load_button)
     layout.addLayout(top_row)
 
+    library_group = QGroupBox("Library Snapshot")
+    library_layout = QVBoxLayout(library_group)
+    self.library_summary_browser = QTextBrowser()
+    self.library_summary_browser.setMaximumHeight(220)
+    library_layout.addWidget(self.library_summary_browser)
+    layout.addWidget(library_group)
+
     splitter = QSplitter(Qt.Orientation.Horizontal)
 
     file_group = QGroupBox("Result Files")
@@ -327,6 +422,8 @@ class MainWindow(QMainWindow):
     records_layout = QVBoxLayout(records_group)
     self.result_meta_label = QLabel("Select a result file to inspect its records.")
     self.result_meta_label.setWordWrap(True)
+    self.payload_summary_browser = QTextBrowser()
+    self.payload_summary_browser.setMaximumHeight(220)
     self.record_table = QTableWidget(0, 4)
     self.record_table.setHorizontalHeaderLabels(["Title", "Published", "Source", "Location"])
     self.record_table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
@@ -335,6 +432,7 @@ class MainWindow(QMainWindow):
     self.record_table.verticalHeader().setVisible(False)
     self.record_table.itemSelectionChanged.connect(self._on_record_selected)
     records_layout.addWidget(self.result_meta_label)
+    records_layout.addWidget(self.payload_summary_browser)
     records_layout.addWidget(self.record_table)
     details_splitter.addWidget(records_group)
 
@@ -364,9 +462,11 @@ class MainWindow(QMainWindow):
       <h2>Open Scrapers Desk</h2>
       <p>This desktop app connects to the <b>Open Scrapers Toolkit</b> repository and gives people a GUI for:</p>
       <ul>
-        <li>browsing structured JSON results</li>
+        <li>queueing scraper jobs instead of waiting for one run at a time</li>
+        <li>checking source-health status before a big batch</li>
+        <li>browsing structured JSON results and summary views</li>
         <li>running single scrapers, whole categories, or the full catalog</li>
-        <li>opening output folders and reviewing record metadata</li>
+        <li>using file-based website link scraping through the toolkit's bulk-link mode</li>
       </ul>
       <p><b>Backend checklist</b></p>
       <ol>
@@ -409,39 +509,77 @@ class MainWindow(QMainWindow):
     label.setObjectName("StatusValue")
     return label
 
+  def _refresh_workspace_combo(self, selected_name: str | None = None) -> None:
+    selected = selected_name if selected_name is not None else self.settings.active_workspace
+    self.workspace_combo.blockSignals(True)
+    self.workspace_combo.clear()
+    self.workspace_combo.addItem("Current Session")
+    for workspace in sorted(self.settings.workspaces, key=lambda item: item.name.lower()):
+      self.workspace_combo.addItem(workspace.name)
+    if selected:
+      index = self.workspace_combo.findText(selected)
+      self.workspace_combo.setCurrentIndex(index if index >= 0 else 0)
+    else:
+      self.workspace_combo.setCurrentIndex(0)
+    self.workspace_combo.blockSignals(False)
+
   def _apply_settings_to_form(self) -> None:
     self.toolkit_path_edit.setText(self.settings.toolkit_path)
     self.node_exec_edit.setText(self.settings.node_executable)
     self.output_dir_edit.setText(self.settings.output_dir)
     self.kofi_url_edit.setText(self.settings.kofi_url)
+    self.default_save_format_combo.setCurrentText(self.settings.save_format or "json")
+    self.run_save_format_combo.setCurrentText(self.settings.save_format or "json")
     self.scraper_category_combo.setCurrentText(self.settings.last_category or "all")
     self._refresh_support_button_state()
 
   def current_settings(self) -> AppSettings:
     toolkit_path = self.toolkit_path_edit.text().strip()
     output_dir = self.output_dir_edit.text().strip() or default_output_dir(toolkit_path)
+    active_workspace = self.workspace_combo.currentText()
     return AppSettings(
       toolkit_path=toolkit_path,
       node_executable=self.node_exec_edit.text().strip() or "node",
       output_dir=output_dir,
       kofi_url=self.kofi_url_edit.text().strip(),
+      save_format=self.default_save_format_combo.currentText(),
       last_scraper_id=self.settings.last_scraper_id,
       last_category=self.scraper_category_combo.currentText(),
+      active_workspace="" if active_workspace == "Current Session" else active_workspace,
+      workspaces=list(self.settings.workspaces),
     )
 
   def save_settings(self) -> None:
-    self.settings = self.current_settings()
+    updated = self.current_settings()
+
+    if updated.active_workspace:
+      replacement = WorkspaceProfile(
+        name=updated.active_workspace,
+        toolkit_path=updated.toolkit_path,
+        node_executable=updated.node_executable,
+        output_dir=updated.output_dir,
+        save_format=updated.save_format,
+      )
+      updated.workspaces = [
+        replacement if workspace.name == updated.active_workspace else workspace
+        for workspace in updated.workspaces
+      ]
+
+    self.settings = updated
     self.settings_store.save(self.settings)
-    self.log_activity("Settings saved.")
     self.output_dir_edit.setText(self.settings.output_dir)
     self.kofi_url_edit.setText(self.settings.kofi_url)
+    self.run_save_format_combo.setCurrentText(self.settings.save_format)
     self._refresh_support_button_state()
+    self._refresh_workspace_combo()
+    self.log_activity("Settings saved.")
 
   def refresh_everything(self) -> None:
     self.save_settings()
     self.refresh_backend_status()
     self.refresh_catalog()
     self.refresh_results()
+    self.refresh_health_summary()
 
   def refresh_backend_status(self) -> None:
     self.save_settings()
@@ -466,6 +604,29 @@ class MainWindow(QMainWindow):
       self.log_activity(f"Could not load scraper catalog: {error}")
       QMessageBox.warning(self, "Catalog Load Failed", str(error))
 
+  def refresh_health_summary(self) -> None:
+    self.save_settings()
+    try:
+      self.health_records = fetch_health_summary(
+        self.settings.toolkit_path,
+        self.settings.node_executable,
+      )
+    except Exception as error:  # noqa: BLE001
+      self.health_records = []
+      self.health_table.setRowCount(0)
+      self.health_count_value.setText("0")
+      self.log_activity(f"Could not load source health summary: {error}")
+      return
+
+    self.health_count_value.setText(str(len(self.health_records)))
+    self.health_table.setRowCount(len(self.health_records))
+    for row_index, record in enumerate(self.health_records):
+      values = [record.source, record.status, record.category, record.summary]
+      for column_index, value in enumerate(values):
+        self.health_table.setItem(row_index, column_index, QTableWidgetItem(value))
+
+    self.log_activity(f"Loaded {len(self.health_records)} source-health rows.")
+
   def populate_scraper_list(self) -> None:
     self.scraper_list.clear()
     filter_text = self.scraper_filter_edit.text().strip().lower()
@@ -473,14 +634,21 @@ class MainWindow(QMainWindow):
 
     for scraper in self.scrapers:
       haystack = " ".join(
-        [scraper.id, scraper.name, scraper.category, scraper.description]
+        [
+          scraper.id,
+          scraper.name,
+          scraper.category,
+          scraper.description,
+          scraper.source_name,
+        ]
       ).lower()
       if filter_text and filter_text not in haystack:
         continue
       if selected_category != "all" and scraper.category != selected_category:
         continue
 
-      item = QListWidgetItem(f"{scraper.name} [{scraper.category}]")
+      suffix = f" - {scraper.source_name}" if scraper.source_name else ""
+      item = QListWidgetItem(f"{scraper.name} [{scraper.category}]{suffix}")
       item.setData(Qt.ItemDataRole.UserRole, scraper.id)
       self.scraper_list.addItem(item)
 
@@ -495,6 +663,7 @@ class MainWindow(QMainWindow):
     self.result_files = scan_result_files(self.settings.output_dir)
     self.results_count_value.setText(str(len(self.result_files)))
     self.recent_results_list.clear()
+    self.library_summary_browser.setHtml(build_library_summary_html(self.result_files))
 
     self.result_files_table.setRowCount(len(self.result_files))
     for row_index, summary in enumerate(self.result_files):
@@ -516,10 +685,14 @@ class MainWindow(QMainWindow):
       self.result_files_table.selectRow(0)
     else:
       self.record_table.setRowCount(0)
+      self.payload_summary_browser.setHtml("<i>No payload selected yet.</i>")
       self.record_detail_browser.setHtml("<i>No result files found yet.</i>")
       self.result_meta_label.setText("No result files found.")
 
     self.log_activity(f"Found {len(self.result_files)} result files.")
+
+  def _on_workspace_changed(self, value: str) -> None:
+    self.settings.active_workspace = "" if value == "Current Session" else value
 
   def _on_category_changed(self, value: str) -> None:
     self.settings.last_category = value
@@ -532,6 +705,22 @@ class MainWindow(QMainWindow):
     scraper_id = item.data(Qt.ItemDataRole.UserRole)
     return next((scraper for scraper in self.scrapers if scraper.id == scraper_id), None)
 
+  def _build_parameter_widget(self, parameter: ScraperParameter) -> tuple[QWidget | QLineEdit, QLineEdit]:
+    field = QLineEdit()
+    if parameter.example:
+      field.setPlaceholderText(parameter.example)
+    field.setToolTip(parameter.description)
+
+    if "file" in parameter.key.lower():
+      row = QHBoxLayout()
+      browse_button = QPushButton("Browse")
+      browse_button.clicked.connect(lambda: self._browse_param_file(field))
+      row.addWidget(field)
+      row.addWidget(browse_button)
+      return self._wrap_layout(row), field
+
+    return field, field
+
   def _on_scraper_selected(self, *_args) -> None:
     scraper = self._selected_scraper()
     if scraper is None:
@@ -540,9 +729,10 @@ class MainWindow(QMainWindow):
     self.settings.last_scraper_id = scraper.id
     self.scraper_name_label.setText(f"{scraper.name} [{scraper.category}]")
     self.scraper_description_label.setText(scraper.description)
-    self.scraper_homepage_label.setText(
-      f"<a href='{scraper.homepage}'>{scraper.homepage}</a>"
+    self.scraper_source_label.setText(
+      f"Source: {scraper.source_name}" if scraper.source_name else ""
     )
+    self.scraper_homepage_label.setText(f"<a href='{scraper.homepage}'>{scraper.homepage}</a>")
 
     while self.param_form.rowCount():
       self.param_form.removeRow(0)
@@ -550,11 +740,9 @@ class MainWindow(QMainWindow):
 
     if scraper.params:
       for parameter in scraper.params:
-        field = QLineEdit()
-        if parameter.example:
-          field.setPlaceholderText(parameter.example)
-        field.setToolTip(parameter.description)
-        self.param_form.addRow(f"{parameter.key}", field)
+        widget, field = self._build_parameter_widget(parameter)
+        label = f"{parameter.key}{' *' if parameter.required else ''}"
+        self.param_form.addRow(label, widget)
         self.param_inputs[parameter.key] = field
     else:
       placeholder = QLabel("This scraper does not require extra parameters.")
@@ -563,16 +751,19 @@ class MainWindow(QMainWindow):
     default_output = Path(self.output_dir_edit.text() or self.settings.output_dir) / f"{scraper.id}.json"
     self.output_file_edit.setText(str(default_output))
 
+  def _collect_scraper_params(self) -> dict[str, str]:
+    return {key: widget.text().strip() for key, widget in self.param_inputs.items() if widget.text().strip()}
+
   def run_selected_scraper(self) -> None:
     scraper = self._selected_scraper()
     if scraper is None:
       QMessageBox.information(self, "No Scraper Selected", "Choose a scraper first.")
       return
 
-    params = {key: widget.text().strip() for key, widget in self.param_inputs.items()}
+    params = self._collect_scraper_params()
     output_path = self.output_file_edit.text().strip()
     if not output_path:
-      QMessageBox.warning(self, "Output Path Required", "Choose an output JSON file path.")
+      QMessageBox.warning(self, "Output Path Required", "Choose an output file path.")
       return
 
     try:
@@ -583,12 +774,13 @@ class MainWindow(QMainWindow):
         self.limit_spin.value(),
         output_path,
         params,
+        self.run_save_format_combo.currentText(),
       )
     except Exception as error:  # noqa: BLE001
       QMessageBox.warning(self, "Run Failed", str(error))
       return
 
-    self._start_process("run", program, args, working_dir)
+    self._queue_or_start_process("run", program, args, working_dir)
 
   def run_selected_category(self) -> None:
     category = self.scraper_category_combo.currentText()
@@ -596,7 +788,7 @@ class MainWindow(QMainWindow):
       QMessageBox.information(
         self,
         "Choose a Category",
-        "Select a specific category first, or use Run All.",
+        "Select a specific category first, or use Queue All.",
       )
       return
 
@@ -614,39 +806,73 @@ class MainWindow(QMainWindow):
         self.limit_spin.value(),
         output_dir,
         category,
+        self.run_save_format_combo.currentText(),
       )
     except Exception as error:  # noqa: BLE001
       QMessageBox.warning(self, "Run Failed", str(error))
       return
 
-    self._start_process(mode_label, program, args, working_dir)
+    self._queue_or_start_process(mode_label, program, args, working_dir)
 
-  def _start_process(
+  def _queue_or_start_process(
     self,
     label: str,
     program: str,
     args: list[str],
     working_dir: str,
   ) -> None:
+    job = QueuedJob(label=label, program=program, args=args, working_dir=working_dir)
+
     if self.current_process is not None and self.current_process.state() != QProcess.ProcessState.NotRunning:
-      QMessageBox.information(self, "Process Running", "Wait for the current job to finish first.")
+      self.pending_jobs.append(job)
+      self._refresh_queue_list()
+      self.log_activity(f"Queued {label}: {describe_command(program, args)}")
       return
 
-    self.current_process_label = label
+    self._start_process(job)
+
+  def _start_process(self, job: QueuedJob) -> None:
+    self.current_process_label = job.label
     process = QProcess(self)
-    process.setWorkingDirectory(working_dir)
-    process.setProgram(program)
-    process.setArguments(args)
+    process.setWorkingDirectory(job.working_dir)
+    process.setProgram(job.program)
+    process.setArguments(job.args)
     process.readyReadStandardOutput.connect(self._consume_process_stdout)
     process.readyReadStandardError.connect(self._consume_process_stderr)
     process.finished.connect(self._finish_process)
     self.current_process = process
 
-    command = describe_command(program, args)
+    command = describe_command(job.program, job.args)
     self.run_log.appendPlainText(f"$ {command}")
-    self.log_activity(f"Started {label}: {command}")
-    self._set_run_buttons_enabled(False)
+    self.log_activity(f"Started {job.label}: {command}")
     process.start()
+
+  def _refresh_queue_list(self) -> None:
+    self.queue_list.clear()
+    for job in self.pending_jobs:
+      self.queue_list.addItem(f"{job.label}: {describe_command(job.program, job.args)}")
+
+  def remove_selected_queue_job(self) -> None:
+    row = self.queue_list.currentRow()
+    if row < 0 or row >= len(self.pending_jobs):
+      return
+    removed = self.pending_jobs.pop(row)
+    self._refresh_queue_list()
+    self.log_activity(f"Removed queued job: {removed.label}")
+
+  def clear_job_queue(self) -> None:
+    if not self.pending_jobs:
+      return
+    self.pending_jobs.clear()
+    self._refresh_queue_list()
+    self.log_activity("Cleared the pending job queue.")
+
+  def _start_next_queued_job(self) -> None:
+    if not self.pending_jobs:
+      return
+    next_job = self.pending_jobs.pop(0)
+    self._refresh_queue_list()
+    self._start_process(next_job)
 
   def _consume_process_stdout(self) -> None:
     if self.current_process is None:
@@ -663,7 +889,9 @@ class MainWindow(QMainWindow):
       self.run_log.appendPlainText(text.rstrip())
 
   def _finish_process(self, exit_code: int, exit_status: QProcess.ExitStatus) -> None:
-    self._set_run_buttons_enabled(True)
+    process = self.current_process
+    self.current_process = None
+
     if exit_status == QProcess.ExitStatus.NormalExit and exit_code == 0:
       self.run_log.appendPlainText(f"{self.current_process_label} finished successfully.")
       self.log_activity(f"{self.current_process_label} finished successfully.")
@@ -674,11 +902,10 @@ class MainWindow(QMainWindow):
       )
       self.log_activity(f"{self.current_process_label} failed with exit code {exit_code}.")
 
-  def _set_run_buttons_enabled(self, enabled: bool) -> None:
-    self.run_selected_button.setEnabled(enabled)
-    self.run_category_button.setEnabled(enabled)
-    self.run_all_button.setEnabled(enabled)
-    self.refresh_catalog_button.setEnabled(enabled)
+    if process is not None:
+      process.deleteLater()
+
+    self._start_next_queued_job()
 
   def _on_result_file_selected(self) -> None:
     selected_items = self.result_files_table.selectedItems()
@@ -692,6 +919,7 @@ class MainWindow(QMainWindow):
         f"{self.current_payload.scraper_name} | {self.current_payload.category} | "
         f"{len(self.current_payload.records)} records | fetched {self.current_payload.fetched_at}"
       )
+      self.payload_summary_browser.setHtml(build_payload_summary_html(self.current_payload))
       self.record_detail_browser.setHtml(format_meta_html(self.current_payload.meta))
       self._refresh_record_table()
     except Exception as error:  # noqa: BLE001
@@ -769,6 +997,7 @@ class MainWindow(QMainWindow):
       self.result_meta_label.setText(
         f"{self.current_payload.scraper_name} | {len(self.current_payload.records)} records | {file_path}"
       )
+      self.payload_summary_browser.setHtml(build_payload_summary_html(self.current_payload))
       self.record_detail_browser.setHtml(format_meta_html(self.current_payload.meta))
       self._refresh_record_table()
       self.tabs.setCurrentIndex(2)
@@ -815,6 +1044,76 @@ class MainWindow(QMainWindow):
       self.open_kofi_button.setToolTip("Add your Ko-fi URL on the Overview tab.")
       self.help_support_button.setToolTip("Add your Ko-fi URL on the Overview tab.")
 
+  def save_workspace(self) -> None:
+    suggested_name = self.workspace_combo.currentText()
+    if suggested_name == "Current Session":
+      suggested_name = ""
+    name, accepted = QInputDialog.getText(
+      self,
+      "Save Workspace",
+      "Workspace name:",
+      text=suggested_name,
+    )
+    if not accepted or not name.strip():
+      return
+
+    self.save_settings()
+    workspace = WorkspaceProfile(
+      name=name.strip(),
+      toolkit_path=self.toolkit_path_edit.text().strip(),
+      node_executable=self.node_exec_edit.text().strip() or "node",
+      output_dir=self.output_dir_edit.text().strip() or default_output_dir(self.toolkit_path_edit.text().strip()),
+      save_format=self.default_save_format_combo.currentText(),
+    )
+    others = [item for item in self.settings.workspaces if item.name != workspace.name]
+    others.append(workspace)
+    self.settings.workspaces = others
+    self.settings.active_workspace = workspace.name
+    self.settings_store.save(self.settings)
+    self._refresh_workspace_combo(workspace.name)
+    self.log_activity(f"Saved workspace '{workspace.name}'.")
+
+  def load_selected_workspace(self) -> None:
+    selected_name = self.workspace_combo.currentText()
+    if selected_name == "Current Session":
+      return
+
+    workspace = next(
+      (item for item in self.settings.workspaces if item.name == selected_name),
+      None,
+    )
+    if workspace is None:
+      return
+
+    self.toolkit_path_edit.setText(workspace.toolkit_path)
+    self.node_exec_edit.setText(workspace.node_executable)
+    self.output_dir_edit.setText(workspace.output_dir)
+    self.default_save_format_combo.setCurrentText(workspace.save_format)
+    self.run_save_format_combo.setCurrentText(workspace.save_format)
+    self.settings.active_workspace = workspace.name
+    self.save_settings()
+    self.log_activity(f"Loaded workspace '{workspace.name}'.")
+    self.refresh_everything()
+
+  def delete_selected_workspace(self) -> None:
+    selected_name = self.workspace_combo.currentText()
+    if selected_name == "Current Session":
+      QMessageBox.information(
+        self,
+        "No Saved Workspace",
+        "Select a saved workspace first.",
+      )
+      return
+
+    self.settings.workspaces = [
+      workspace for workspace in self.settings.workspaces if workspace.name != selected_name
+    ]
+    if self.settings.active_workspace == selected_name:
+      self.settings.active_workspace = ""
+    self.settings_store.save(self.settings)
+    self._refresh_workspace_combo()
+    self.log_activity(f"Deleted workspace '{selected_name}'.")
+
   def _browse_toolkit_path(self) -> None:
     path = QFileDialog.getExistingDirectory(self, "Choose Toolkit Repository", self.toolkit_path_edit.text())
     if path:
@@ -837,10 +1136,20 @@ class MainWindow(QMainWindow):
       self,
       "Choose Output File",
       self.output_file_edit.text(),
-      "JSON Files (*.json)",
+      "JSON Files (*.json);;All Files (*.*)",
     )
     if path:
       self.output_file_edit.setText(path)
+
+  def _browse_param_file(self, field: QLineEdit) -> None:
+    path, _ = QFileDialog.getOpenFileName(
+      self,
+      "Choose Parameter File",
+      field.text(),
+      "Text Files (*.txt);;All Files (*.*)",
+    )
+    if path:
+      field.setText(path)
 
   def _open_selected_recent_result(self, *_args) -> None:
     current_item = self.recent_results_list.currentItem()

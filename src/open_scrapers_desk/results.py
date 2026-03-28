@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections import Counter
 import json
 from pathlib import Path
 from typing import Any
@@ -96,3 +97,63 @@ def format_meta_html(meta: dict[str, Any]) -> str:
   for key, value in meta.items():
     rows.append(f"<tr><td><b>{key}</b></td><td>{value}</td></tr>")
   return "<table cellspacing='6'>" + "".join(rows) + "</table>"
+
+
+def build_library_summary_html(result_files: list[ResultFileSummary]) -> str:
+  if not result_files:
+    return "<i>No saved result files yet.</i>"
+
+  category_counts = Counter(summary.category for summary in result_files)
+  source_counts = Counter(summary.source for summary in result_files if summary.source)
+  total_records = sum(summary.record_count for summary in result_files)
+  recent_files = "".join(
+    f"<li>{summary.scraper_name} ({summary.record_count} records, {summary.fetched_at})</li>"
+    for summary in result_files[:5]
+  )
+  category_html = "".join(
+    f"<li>{category}: {count}</li>" for category, count in category_counts.most_common()
+  )
+  source_html = "".join(
+    f"<li>{source}: {count}</li>" for source, count in source_counts.most_common(5)
+  )
+
+  return f"""
+    <h3>Library Snapshot</h3>
+    <p><b>Files:</b> {len(result_files)}<br>
+    <b>Total records:</b> {total_records}</p>
+    <h4>By category</h4>
+    <ul>{category_html}</ul>
+    <h4>Top sources</h4>
+    <ul>{source_html}</ul>
+    <h4>Latest files</h4>
+    <ul>{recent_files}</ul>
+  """
+
+
+def build_payload_summary_html(payload: ResultPayload) -> str:
+  if not payload.records:
+    return "<i>No records available in this payload.</i>"
+
+  tag_counts = Counter(tag for record in payload.records for tag in record.tags)
+  author_counts = Counter(author for record in payload.records for author in record.authors)
+  recent_titles = "".join(
+    f"<li>{record.title}</li>" for record in payload.records[:5]
+  )
+  tag_html = "".join(f"<li>{tag}: {count}</li>" for tag, count in tag_counts.most_common(8))
+  author_html = "".join(
+    f"<li>{author}: {count}</li>" for author, count in author_counts.most_common(5)
+  )
+
+  return f"""
+    <h3>{payload.scraper_name}</h3>
+    <p><b>Category:</b> {payload.category}<br>
+    <b>Source:</b> {payload.source}<br>
+    <b>Records:</b> {len(payload.records)}<br>
+    <b>Fetched:</b> {payload.fetched_at}</p>
+    <h4>Top tags</h4>
+    <ul>{tag_html or '<li>None</li>'}</ul>
+    <h4>Top authors</h4>
+    <ul>{author_html or '<li>None</li>'}</ul>
+    <h4>First records</h4>
+    <ul>{recent_titles}</ul>
+  """

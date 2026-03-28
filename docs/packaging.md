@@ -1,8 +1,6 @@
-# Packaging And Release Guide
+# Packaging
 
-This repository is set up for Windows-first desktop distribution.
-
-## Build the executable
+## Local `.exe` build
 
 ```bash
 pip install -r requirements.txt
@@ -13,32 +11,20 @@ Output:
 
 - `dist/OpenScrapersDesk/`
 
-## Smoke test before release
+## Installer
 
-```bash
-python -m compileall src
-python scripts/smoke_test.py
-```
-
-## Installer support
-
-The repo includes an Inno Setup script:
+The repository still includes:
 
 - `installer/OpenScrapersDesk.iss`
 
-After building the PyInstaller output, compile the Inno Setup script to create a Windows installer.
+Use Inno Setup after building the PyInstaller output if you want a traditional installer.
 
-## Suggested release contents
+## GitHub Actions
 
-- `OpenScrapersDesk.exe` bundle from PyInstaller
-- `README.md`
-- release notes
-- clear link to the backend toolkit repo
+The Windows workflow now:
 
-## GitHub Actions workflow
-
-The Windows build workflow can create artifacts for tag-based releases. Extend it later if you want:
-
-- installer compilation
-- code signing
-- release asset uploads
+- installs dependencies
+- runs the smoke test
+- builds the executable
+- creates a zipped release bundle
+- uploads both the folder artifact and zip artifact

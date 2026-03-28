@@ -7,7 +7,7 @@ import subprocess
 from pathlib import Path
 from typing import Sequence
 
-from .models import BackendStatus, ScraperParameter, ScraperSummary
+from .models import BackendStatus, ScraperParameter, ScraperSummary, SourceHealthRecord
 from .settings import is_toolkit_path
 
 
@@ -115,11 +115,13 @@ def list_scrapers(toolkit_path: str, node_executable: str) -> list[ScraperSummar
       name=item["name"],
       description=item["description"],
       homepage=item["homepage"],
+      source_name=item.get("sourceName", ""),
       params=[
         ScraperParameter(
           key=parameter.get("key", ""),
           description=parameter.get("description", ""),
           example=parameter.get("example", ""),
+          required=bool(parameter.get("required", False)),
         )
         for parameter in item.get("params", [])
       ],
@@ -135,6 +137,7 @@ def build_run_command(
   limit: int,
   output_path: str,
   params: dict[str, str],
+  save_format: str = "json",
 ) -> tuple[str, list[str], str]:
   program, base_args, working_dir, _ = _cli_invocation(
     Path(toolkit_path),
@@ -142,6 +145,8 @@ def build_run_command(
     prefer_source=True,
   )
   args = [*base_args, "run", scraper_id, "--limit", str(limit), "--output", output_path]
+  if save_format and save_format != "json":
+    args.extend(["--save-format", save_format])
   for key, value in params.items():
     if value.strip():
       args.extend(["--param", f"{key}={value}"])
@@ -154,6 +159,7 @@ def build_run_all_command(
   limit: int,
   output_dir: str,
   category: str = "",
+  save_format: str = "json",
 ) -> tuple[str, list[str], str]:
   program, base_args, working_dir, _ = _cli_invocation(
     Path(toolkit_path),
@@ -163,7 +169,40 @@ def build_run_all_command(
   args = [*base_args, "run-all", "--limit", str(limit), "--out-dir", output_dir]
   if category and category != "all":
     args.extend(["--category", category])
+  if save_format and save_format != "json":
+    args.extend(["--save-format", save_format])
   return program, args, str(working_dir)
+
+
+def fetch_health_summary(toolkit_path: str, node_executable: str) -> list[SourceHealthRecord]:
+  program, base_args, working_dir, _ = _cli_invocation(
+    Path(toolkit_path),
+    node_executable,
+    prefer_source=True,
+  )
+  command = [program, *base_args, "health", "--format", "json"]
+  result = subprocess.run(
+    command,
+    cwd=working_dir,
+    check=True,
+    capture_output=True,
+    text=True,
+    timeout=180,
+  )
+  payload = json.loads(result.stdout)
+  return [
+    SourceHealthRecord(
+      scraper_id=item.get("metadata", {}).get("scraperId", ""),
+      title=item.get("title", ""),
+      category=item.get("metadata", {}).get("category", ""),
+      source=item.get("source", ""),
+      status=item.get("metadata", {}).get("status", ""),
+      duration_ms=str(item.get("metadata", {}).get("durationMs", "")),
+      records=str(item.get("metadata", {}).get("records", "")),
+      summary=item.get("summary", ""),
+    )
+    for item in payload.get("records", [])
+  ]
 
 
 def describe_command(program: str, args: Sequence[str]) -> str:

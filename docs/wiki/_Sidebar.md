@@ -1,24 +1,17 @@
-[Home](Home.md)
+[Home](Home)
 
-**Start Here**
+Basics
 
-- [Installation](Installation.md)
-- [Connecting to the Toolkit](Connecting-to-the-Toolkit.md)
-- [Using the Desktop App](Using-the-Desktop-App.md)
-- [Settings and Data Locations](Settings-and-Data-Locations.md)
+- [Installation](Installation)
+- [Connecting To The Toolkit](Connecting-to-the-Toolkit)
+- [Using The Desktop App](Using-the-Desktop-App)
 
-**Maintainers**
+Maintenance
 
-- [Architecture](Architecture.md)
-- [Packaging Windows Builds](Packaging-Windows-Builds.md)
-- [Publishing Releases](Publishing-Releases.md)
-- [Troubleshooting](Troubleshooting.md)
-- [FAQ](FAQ.md)
-
----
-
-**Open Scrapers Ecosystem**
-
-- [Desktop Repository](https://github.com/Ninezel/open-scrapers-desk)
-- [Toolkit Backend](https://github.com/Ninezel/open-scrapers-toolkit)
-- [Desktop Releases](https://github.com/Ninezel/open-scrapers-desk/releases)
+- [Architecture](Architecture)
+- [Packaging Windows Builds](Packaging-Windows-Builds)
+- [Publishing Releases](Publishing-Releases)
+- [Release Workflow](Release-Workflow)
+- [Settings And Data Locations](Settings-and-Data-Locations)
+- [Troubleshooting](Troubleshooting)
+- [FAQ](FAQ)
